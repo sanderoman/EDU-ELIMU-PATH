@@ -7,22 +7,46 @@ export default async function handler(req: any, res: any) {
   if (!message) return res.status(400).json({ error: 'Invalid payload' });
 
   try {
-    const prompt = `Analyze this M-Pesa notification: "${message}".\nVerify if exactly KSH 150.00 was paid (any recipient is acceptable).\nExtract the transaction ID (alphanumeric code).\nReturn JSON: {"isValid": boolean, "transactionId": string, "reason": string}.`;
+    const prompt = `You are verifying an M-Pesa payment message. Analyze: "${message}"
+    
+Rules:
+- Accept if amount is exactly KSH 150.00 (or 150 KSH)
+- Extract any alphanumeric transaction ID
+- Return valid JSON format
+
+Return only this JSON format:
+{"isValid": true/false, "transactionId": "extracted_id_or_empty", "reason": "brief_explanation"}`;
 
     const response = await callModel(prompt, { config: {
       responseMimeType: 'application/json',
       responseSchema: {
-        type: Type.OBJECT
+        type: Type.OBJECT,
+        properties: {
+          isValid: { type: Type.BOOLEAN },
+          transactionId: { type: Type.STRING },
+          reason: { type: Type.STRING }
+        },
+        required: ["isValid", "transactionId", "reason"]
       }
     }});
 
     const text = response.text;
-    if (!text) return res.status(200).json({ isValid: false, reason: 'SYSTEM ERROR: EMPTY RESPONSE' });
+    if (!text) return res.status(200).json({ isValid: false, transactionId: "", reason: 'Empty AI response' });
+    
     try {
-      return res.status(200).json(JSON.parse(text));
+      const result = JSON.parse(text);
+      return res.status(200).json(result);
     } catch (err) {
       console.error('verify parse error', err, text);
-      return res.status(200).json({ isValid: false, reason: 'PARSE ERROR' });
+      // Fallback: try to extract manually
+      const amountMatch = message.match(/KSH\s*150\.?00?/i);
+      const idMatch = message.match(/Transaction ID:\s*([A-Z0-9]+)/i);
+      
+      return res.status(200).json({
+        isValid: !!amountMatch,
+        transactionId: idMatch ? idMatch[1] : "",
+        reason: amountMatch ? "Manual verification successful" : "Amount not found"
+      });
     }
   } catch (error: any) {
     console.error('verify error', error);
