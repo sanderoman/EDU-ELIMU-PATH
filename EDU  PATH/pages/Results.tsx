@@ -11,7 +11,18 @@ import {
 } from 'lucide-react';
 import { fetchCourses } from '../constants';
 import { getEligibleCourses } from '../utils/logic';
-import { getCareerAdvice, verifyMpesaMessage, getMarketableAnalysis, getDetailedCourseBlueprint, GroundedResponse } from '../services/geminiService';
+type GroundedResponse = { text: string; sources: { title: string; uri: string }[] };
+
+const postJson = async (url: string, body: any) => {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+};
+
 import { Course, PaymentRecord, MasterKey } from '../types';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -80,7 +91,7 @@ const Results: React.FC = () => {
     setVerifStage('ANALYZING_SMS');
     
     try {
-      const result = await verifyMpesaMessage(mpesaMessage);
+      const result = await postJson('/api/gemini/verify', { message: mpesaMessage });
       
       if (result.isValid && result.transactionId) {
         setVerifStage('DB_CROSS_CHECK');
@@ -124,7 +135,7 @@ const Results: React.FC = () => {
     setIsExploringData(true);
     setExploreData(null);
     try {
-      const data = await getDetailedCourseBlueprint(courseName, institution);
+      const data = await postJson('/api/gemini/course', { courseName, institution });
       setExploreData(data);
       setIsExploringData(false);
     } catch (err) {
@@ -153,8 +164,8 @@ const Results: React.FC = () => {
   const fetchAdvice = async () => {
     setIsLoadingAdvice(true);
     const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
-    const advice = await getCareerAdvice(meanGrade, top3);
-    setCareerAdvice(advice);
+    const advRes = await postJson('/api/gemini/advice', { meanGrade, topSubjects: top3 });
+    setCareerAdvice(advRes.text || '');
     setIsLoadingAdvice(false);
   };
 
@@ -162,7 +173,7 @@ const Results: React.FC = () => {
     setIsLoadingMarketable(true);
     const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
     const namesOnly = eligibleCourses.slice(0, 80).map(c => `${c.name} at ${c.institution}`);
-    const results = await getMarketableAnalysis(meanGrade, top3, namesOnly);
+    const results = await postJson('/api/gemini/marketable', { meanGrade, topSubjects: top3, courseList: namesOnly });
     setMarketableCourses(results);
     setIsLoadingMarketable(false);
   };

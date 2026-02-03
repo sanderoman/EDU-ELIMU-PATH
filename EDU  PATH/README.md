@@ -44,10 +44,12 @@ A comprehensive KCSE career guidance platform built with React, TypeScript, and 
    cp .env.local.example .env.local
    ```
    
-   Update `.env.local` with your API key:
+   Update `.env.local` with your API key for local serverless testing (server only):
    ```
-   VITE_API_KEY=your_gemini_api_key_here
+   API_KEY=your_gemini_api_key_here
    ```
+
+> Note: For production, set the `API_KEY` secret in your Vercel project (Environment > Add) and do not expose it as `VITE_***` in client builds.
 
 4. **Start development server**
    ```bash
@@ -58,21 +60,20 @@ A comprehensive KCSE career guidance platform built with React, TypeScript, and 
 
 ### Vercel Deployment
 
-1. **Connect to Vercel**
-   - Push code to GitHub
-   - Import project in Vercel dashboard
-   - Configure environment variables
+1. **Connect to Vercel** ✅
+   - Push the repo to GitHub and import the project in Vercel.
 
-2. **Environment Variables**
-   Set in Vercel dashboard:
-   ```
-   VITE_API_KEY=your_gemini_api_key
-   ```
+2. **Environment Variables / Secrets** 🔐
+   - Add a server-side environment variable named `API_KEY` (the Gemini API key) in your Vercel Project > Settings > Environment Variables. Do NOT expose it as a `VITE_` prefixed variable.
+   - Alternatively, create a Vercel Secret named `api_key` and reference it in `vercel.json` (this project uses `API_KEY: "@api_key"`).
 
-3. **Build Settings**
+3. **Build Settings** ⚙️
    - Build Command: `npm run build`
    - Output Directory: `dist`
    - Install Command: `npm install`
+
+4. **Serverless Endpoints** 💡
+   - This project exposes serverless endpoints at `/api/gemini/*` and `/api/payment/*` for secure AI and payment operations. Keep `API_KEY` only on the server (Vercel secrets/environment variables).
 
 ### Manual Build
 
