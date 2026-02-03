@@ -3,7 +3,17 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UNIVERSITIES, KMTC_CAMPUSES, NATIONAL_POLYTECHNICS } from '../constants';
 import { ExternalLink, GraduationCap, MapPin, Building2, Search, Globe, ChevronRight, Award, Library, BookOpen, X, Loader2, Cpu, Download, Landmark, Network, Link as LinkIcon, FileText, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { getUniversityCourses, GroundedResponse } from '../services/geminiService';
+type GroundedResponse = { text: string; sources: { title: string; uri: string }[] };
+
+const postJson = async (url: string, body: any) => {
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+};
 
 type FetchState = 'IDLE' | 'CONNECTING' | 'FETCHING' | 'PARSING' | 'SUCCESS' | 'ERROR';
 
@@ -58,7 +68,7 @@ const Universities: React.FC = () => {
     setBlueprintData(null);
     
     try {
-      const data = await getUniversityCourses(inst.name);
+      const data = await postJson('/api/gemini/university', { institutionName: inst.name });
       setBlueprintData(data);
       setFetchStatus('SUCCESS');
     } catch (err) {
