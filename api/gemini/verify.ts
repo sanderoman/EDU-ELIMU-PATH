@@ -38,9 +38,12 @@ Return only this JSON format:
       return res.status(200).json(result);
     } catch (err) {
       console.error('verify parse error', err, text);
-      // Fallback: try to extract manually
-      const amountMatch = message.match(/KSH\s*150\.?00?/i);
-      const idMatch = message.match(/Transaction ID:\s*([A-Z0-9]+)/i);
+      // Fallback: try to extract manually with multiple patterns
+      const amountMatch = message.match(/KSH\s*150\.?00?/i) || message.match(/150\.?00?\s*KSH/i);
+      const idMatch = message.match(/Transaction ID:\s*([A-Z0-9]+)/i) || 
+                     message.match(/transaction code:\s*([A-Z0-9]+)/i) ||
+                     message.match(/ID:\s*([A-Z0-9]+)/i) ||
+                     message.match(/([A-Z0-9]{8,12})/); // Generic alphanumeric ID
       
       return res.status(200).json({
         isValid: !!amountMatch,
