@@ -1,0 +1,6 @@
+﻿{
+  "title": "feat: add serverless Gemini API endpoints, payment simulation, and Vercel wiring",
+  "head": "feature/vercel-serverless-api",
+  "base": "main",
+  "body": "Adds secure serverless endpoints for AI grounding and payment simulation and updates the frontend to call them. This removes direct client imports of server SDKs and keeps the Gemini API key server-side (mapped via vercel.json -> API_KEY: @api_key). Also includes a simulated M-Pesa STK flow and basic tests.\n\nChanges:\n- Added endpoints: api/gemini/* (advice, marketable, university, course, verify) and api/payment/initiate.\n- Frontend changes in pages/Results.tsx and pages/Universities.tsx to use /api/*.\n- Updated vercel.json to reference server secret and updated README.md.\n\nHow to test (Acceptance checklist):\n- Merge branch feature/vercel-serverless-api\n- Add Vercel secret api_key with Gemini key\n- Deploy and confirm /api/gemini/advice returns a JSON text result\n- Confirm UI Activate -> paste M-Pesa message -> VERIFY & UNLOCK works with a valid sample\n- Confirm /api/payment/initiate returns a checkoutRequestId"
+}

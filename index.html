@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDU PATH | KCSE 2025 Career Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand-red: #dc2626;
+      --brand-red-glow: rgba(220, 38, 38, 0.4);
+    }
+    body { 
+      font-family: 'Plus Jakarta Sans', sans-serif; 
+      scroll-behavior: smooth;
+      background-color: black;
+      color: #e5e7eb;
+    }
+    
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .page-transition {
+      animation: fadeInBlur 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeInBlur {
+      from { opacity: 0; filter: blur(10px); transform: scale(0.98); }
+      to { opacity: 1; filter: blur(0); transform: scale(1); }
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .animate-ticker {
+      display: flex;
+      width: fit-content;
+      animation: ticker 45s linear infinite;
+    }
+
+    .animate-ticker:hover {
+      animation-play-state: paused;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    @media print {
+      body {
+        background: white !important;
+        color: black !important;
+        -webkit-print-color-adjust: exact;
+      }
+      header, footer, .fixed, button, .no-print, input, textarea, .bg-red-600.text-white.text-\[9px\] {
+        display: none !important;
+      }
+      .print-only {
+        display: block !important;
+      }
+      .max-w-7xl {
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      .grid { display: block !important; }
+      .bg-gray-900, .bg-gray-900\/40, .bg-white\/\[0\.02\], .bg-gray-900\/50, .bg-white\/5 {
+        background: white !important;
+        border: 1px solid #ddd !important;
+        color: black !important;
+        margin-bottom: 12px !important;
+        page-break-inside: avoid !important;
+      }
+      .text-white, h1, h2, h3 { color: black !important; }
+      .text-red-600 { color: #dc2626 !important; font-weight: 800 !important; }
+      .rounded-\[4rem\], .rounded-\[3\.5rem\], .rounded-\[2\.5rem\], .rounded-3xl { border-radius: 4px !important; }
+      p { font-size: 10pt !important; line-height: 1.4 !important; }
+    }
+
+    .print-only { display: none; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--brand-red); }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.13.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "jspdf": "https://esm.sh/jspdf@^2.5.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@^3.8.2",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.1"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-black">
+  <div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
