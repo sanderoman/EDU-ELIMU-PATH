@@ -7,7 +7,7 @@ export default async function handler(req: any, res: any) {
   if (!message) return res.status(400).json({ error: 'Invalid payload' });
 
   try {
-    const prompt = `Analyze this M-Pesa notification: "${message}".\nVerify if exactly KES 150 was paid to \"EDU PATH\".\nExtract the 10-char Alphanumeric ID.\nReturn JSON: {"isValid": boolean, "transactionId": string, "reason": string}.`;
+    const prompt = `Analyze this M-Pesa notification: "${message}".\nVerify if exactly KSH 150.00 was paid (any recipient is acceptable).\nExtract the transaction ID (alphanumeric code).\nReturn JSON: {"isValid": boolean, "transactionId": string, "reason": string}.`;
 
     const response = await callModel(prompt, { config: {
       responseMimeType: 'application/json',
