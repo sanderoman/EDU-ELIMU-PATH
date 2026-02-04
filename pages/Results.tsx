@@ -204,7 +204,7 @@ const Results: React.FC = () => {
     doc.setFontSize(10);
     doc.text(`Report ID: ${reportId} | Generated: ${timestamp}`, 20, 40);
 
-    const tableData = filteredCourses.slice(0, 50).map(c => [c.name, c.institution, c.type, c.minGrade]);
+    const tableData = filteredCourses.map(c => [c.name, c.institution, c.type, c.minGrade]);
     doc.autoTable({
       startY: 50,
       head: [['Course Name', 'Institution', 'Level', 'Min Grade']],
