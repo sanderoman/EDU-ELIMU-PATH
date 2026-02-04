@@ -8,11 +8,14 @@ const AdminDashboard: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [activeTab, setActiveTab] = useState<'finance' | 'otp' | 'security'>('finance');
+  const [activeTab, setActiveTab] = useState<'finance' | 'otp' | 'security' | 'approval'>('approval');
   const [transactions, setTransactions] = useState<PaymentRecord[]>([]);
   const [masterKeys, setMasterKeys] = useState<MasterKey[]>([]);
   const [newKeyLabel, setNewKeyLabel] = useState('');
   const [showRawMsg, setShowRawMsg] = useState<string | null>(null);
+  const [studentName, setStudentName] = useState('');
+  const [studentPhone, setStudentPhone] = useState('');
+  const [accessCode, setAccessCode] = useState('');
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -51,6 +54,29 @@ const AdminDashboard: React.FC = () => {
     const updated = masterKeys.filter(k => k.id !== id);
     setMasterKeys(updated);
     localStorage.setItem('edupath_master_keys', JSON.stringify(updated));
+  };
+
+  const generateAccessCode = () => {
+    if (!studentName.trim() || !studentPhone.trim()) {
+      alert('Student name and phone required');
+      return;
+    }
+    
+    const code = 'EDU' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    setAccessCode(code);
+    
+    // Store the access code
+    const approvalCodes = JSON.parse(localStorage.getItem('edupath_approval_codes') || '[]');
+    approvalCodes.push({
+      code,
+      studentName,
+      studentPhone,
+      createdAt: new Date().toISOString(),
+      used: false
+    });
+    localStorage.setItem('edupath_approval_codes', JSON.stringify(approvalCodes));
+    
+    alert(`Access Code Generated: ${code}\nShare this with ${studentName}`);
   };
 
   const clearLogs = () => {
@@ -103,17 +129,90 @@ const AdminDashboard: React.FC = () => {
            </div>
            
            <div className="flex bg-white/5 p-2 rounded-2xl border border-white/10 overflow-x-auto scrollbar-hide">
-              {['finance', 'otp', 'security'].map(tab => (
+              {['approval', 'finance', 'otp', 'security'].map(tab => (
                 <button 
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
                   className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-red-600 text-white shadow-xl' : 'text-gray-500 hover:text-white'}`}
                 >
-                  {tab === 'finance' ? 'Revenue Ledger' : tab === 'otp' ? 'Master Keys' : 'Security Audit'}
+                  {tab === 'approval' ? 'Manual Approval' : tab === 'finance' ? 'Revenue Ledger' : tab === 'otp' ? 'Master Keys' : 'Security Audit'}
                 </button>
               ))}
            </div>
         </header>
+
+        {activeTab === 'approval' && (
+          <div className="space-y-12">
+            <div className="bg-gray-900 border border-white/5 p-12 rounded-[3.5rem] shadow-2xl">
+              <div className="flex items-center gap-4 mb-8">
+                <CheckCircle className="text-red-600" size={32} />
+                <h2 className="text-3xl font-black uppercase text-white">Manual Payment Approval</h2>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-8 mb-8">
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Student Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter student full name"
+                    className="w-full h-16 bg-black border-2 border-white/5 rounded-2xl px-6 text-white font-black focus:border-red-600 outline-none transition-all"
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Phone Number</label>
+                  <input 
+                    type="text" 
+                    placeholder="Enter phone number"
+                    className="w-full h-16 bg-black border-2 border-white/5 rounded-2xl px-6 text-white font-black focus:border-red-600 outline-none transition-all"
+                    value={studentPhone}
+                    onChange={(e) => setStudentPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              <button 
+                onClick={generateAccessCode}
+                className="w-full bg-red-600 text-white h-16 rounded-2xl font-black text-lg hover:bg-white hover:text-black transition-all flex items-center justify-center gap-4 shadow-xl"
+              >
+                <Key size={20} />
+                Generate Access Code
+              </button>
+              
+              {accessCode && (
+                <div className="mt-8 p-6 bg-green-600/10 border-2 border-green-600/30 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle className="text-green-500" size={24} />
+                    <h3 className="text-lg font-black text-green-500">Access Code Generated</h3>
+                  </div>
+                  <div className="text-2xl font-black text-white mb-2">{accessCode}</div>
+                  <p className="text-sm text-gray-400">Share this code with the student to unlock their report</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-gray-900 border border-white/5 p-12 rounded-[3.5rem] shadow-2xl">
+              <h3 className="text-xl font-black uppercase text-white mb-6">Recent Approval Codes</h3>
+              <div className="space-y-4">
+                {JSON.parse(localStorage.getItem('edupath_approval_codes') || '[]').slice(0, 5).map((code: any, i: number) => (
+                  <div key={i} className="flex justify-between items-center p-4 bg-black/50 rounded-xl">
+                    <div>
+                      <div className="font-black text-white">{code.studentName}</div>
+                      <div className="text-sm text-gray-400">{code.studentPhone} • {new Date(code.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-black text-red-600">{code.code}</div>
+                      <div className={`text-xs ${code.used ? 'text-gray-500' : 'text-green-500'}`}>
+                        {code.used ? 'Used' : 'Active'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'finance' && (
           <div className="space-y-12">
