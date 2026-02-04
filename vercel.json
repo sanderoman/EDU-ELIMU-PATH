@@ -6,7 +6,7 @@
   "framework": "vite",
   "build": {
     "env": {
-      "DEPLOY_TIME": "2025-02-04-14-40"
+      "DEPLOY_TIME": "2025-02-04-15-05"
     }
   },
   "rewrites": [
