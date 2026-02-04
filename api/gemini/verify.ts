@@ -10,8 +10,10 @@ export default async function handler(req: any, res: any) {
     const prompt = `You are verifying an M-Pesa payment message. Analyze: "${message}"
     
 Rules:
-- Accept if amount is exactly KSH 150.00 (or 150 KSH)
-- Extract any alphanumeric transaction ID
+- Accept if amount is exactly Ksh150.00 or KSH150.00
+- Look for transaction ID at start (like QAZ7XPL9MN)
+- Look for "sent to EDU PATH" confirmation
+- Extract the transaction ID (alphanumeric code at beginning)
 - Return valid JSON format
 
 Return only this JSON format:
@@ -39,16 +41,18 @@ Return only this JSON format:
     } catch (err) {
       console.error('verify parse error', err, text);
       // Fallback: try to extract manually with multiple patterns
-      const amountMatch = message.match(/KSH\s*150\.?00?/i) || message.match(/150\.?00?\s*KSH/i);
-      const idMatch = message.match(/Transaction ID:\s*([A-Z0-9]+)/i) || 
+      const amountMatch = message.match(/Ksh\s*150\.?00?/i) || message.match(/KSH\s*150\.?00?/i);
+      const eduPathMatch = message.match(/sent to EDU PATH/i);
+      const idMatch = message.match(/^([A-Z0-9]{10})\s+Confirmed/i) ||  // ID at start
+                     message.match(/Transaction ID:\s*([A-Z0-9]+)/i) || 
                      message.match(/transaction code:\s*([A-Z0-9]+)/i) ||
                      message.match(/ID:\s*([A-Z0-9]+)/i) ||
-                     message.match(/([A-Z0-9]{8,12})/); // Generic alphanumeric ID
+                     message.match(/^([A-Z0-9]{8,12})/); // Generic alphanumeric ID at start
       
       return res.status(200).json({
-        isValid: !!amountMatch,
+        isValid: !!(amountMatch && eduPathMatch),
         transactionId: idMatch ? idMatch[1] : "",
-        reason: amountMatch ? "Manual verification successful" : "Amount not found"
+        reason: (amountMatch && eduPathMatch) ? "Manual verification successful" : "Amount or recipient not found"
       });
     }
   } catch (error: any) {
