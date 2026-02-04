@@ -35,7 +35,7 @@ export default async function handler(req: any, res: any) {
       }
     };
 
-    const fallback = fallbackData[institutionName] || fallbackData.default;
+    const fallback = (fallbackData as any)[institutionName] || fallbackData.default;
     return res.status(200).json(fallback);
   }
 }
