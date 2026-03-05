@@ -1,5 +1,6 @@
 
 import { University, Course, Grade } from './types';
+import { generateKUCCPSCourses } from './kuccps-data';
 
 const LOGO_PLACEHOLDERS = [
   'https://images.unsplash.com/photo-1592280771190-3e2e4d571952?w=128&h=128&fit=crop&q=80',
@@ -198,9 +199,12 @@ const generateFullDataset = (): Course[] => {
 
 export const MOCK_COURSES = generateFullDataset();
 
+// KUCCPS Official Courses
+export const KUCCPS_COURSES = generateKUCCPSCourses();
+
 export const fetchCourses = async (): Promise<Course[]> => {
   return new Promise((resolve) => {
-    setTimeout(() => resolve(MOCK_COURSES), 500);
+    setTimeout(() => resolve(KUCCPS_COURSES), 500);
   });
 };
 
