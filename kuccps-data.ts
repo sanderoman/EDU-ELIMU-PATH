@@ -913,7 +913,7 @@ export const generateKUCCPSCourses = (): Course[] => {
     });
   });
 
-  return courses;
+  return courses.slice(0, 200);
 };
 
 export default KUCCPS_CLUSTERS;
