@@ -3,16 +3,80 @@ import { Grade, GradeToPoints, SubjectGrade, Course } from '../types';
 
 export const calculateMeanGrade = (grades: SubjectGrade[]): Grade => {
   if (grades.length === 0) return 'E';
-  const totalPoints = grades.reduce((sum, g) => sum + g.points, 0);
-  const average = totalPoints / grades.length;
   
+  // KNEC Official Method: Use BEST 7 subjects only
+  const sortedGrades = grades
+    .sort((a, b) => b.points - a.points) // Sort by points descending
+    .slice(0, 7); // Take top 7 subjects
+  
+  // If student has less than 7 subjects, use all available
+  const subjectsToUse = sortedGrades.length > 0 ? sortedGrades : grades;
+  
+  // Calculate total points from best 7 subjects
+  const totalPoints = subjectsToUse.reduce((sum, g) => sum + g.points, 0);
+  const averagePoints = totalPoints / subjectsToUse.length;
+  
+  // Round to nearest whole point (KNEC standard)
+  const roundedPoints = Math.round(averagePoints);
+  
+  // Convert back to letter grade using official KNEC scale
   const entries = Object.entries(GradeToPoints) as [Grade, number][];
   entries.sort((a, b) => b[1] - a[1]);
   
   for (const [grade, points] of entries) {
-    if (average >= points - 0.5) return grade;
+    if (roundedPoints >= points) return grade;
   }
+  
   return 'E';
+};
+
+export const getMeanGradeDetails = (grades: SubjectGrade[]) => {
+  if (grades.length === 0) {
+    return {
+      meanGrade: 'E',
+      totalPoints: 0,
+      averagePoints: 0,
+      roundedPoints: 0,
+      bestSubjects: [],
+      totalSubjects: grades.length
+    };
+  }
+  
+  // KNEC Official Method: Use BEST 7 subjects only
+  const sortedGrades = grades
+    .sort((a, b) => b.points - a.points) // Sort by points descending
+    .slice(0, 7); // Take top 7 subjects
+  
+  // If student has less than 7 subjects, use all available
+  const subjectsToUse = sortedGrades.length > 0 ? sortedGrades : grades;
+  
+  // Calculate total points from best 7 subjects
+  const totalPoints = subjectsToUse.reduce((sum, g) => sum + g.points, 0);
+  const averagePoints = totalPoints / subjectsToUse.length;
+  
+  // Round to nearest whole point (KNEC standard)
+  const roundedPoints = Math.round(averagePoints);
+  
+  // Convert back to letter grade using official KNEC scale
+  const entries = Object.entries(GradeToPoints) as [Grade, number][];
+  entries.sort((a, b) => b[1] - a[1]);
+  
+  let meanGrade = 'E';
+  for (const [grade, points] of entries) {
+    if (roundedPoints >= points) {
+      meanGrade = grade;
+      break;
+    }
+  }
+  
+  return {
+    meanGrade,
+    totalPoints,
+    averagePoints,
+    roundedPoints,
+    bestSubjects: subjectsToUse,
+    totalSubjects: grades.length
+  };
 };
 
 export const getEligibleCourses = (meanGrade: Grade, courses: Course[]): Course[] => {

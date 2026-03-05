@@ -7,10 +7,11 @@ import {
   Cpu, Award, FileText, Target, Zap, BookOpen, Layers, Activity, Radio, 
   Volume2, Building2, MapPin, BarChart3, TrendingUp, Table, Database, 
   FileDigit, Star, Lightbulb, Medal, Rocket, Shield, LockKeyhole, CreditCard,
-  Copy, ExternalLink, RefreshCw, ArrowUpRight, MessageSquare, Link as LinkIcon
+  Copy, ExternalLink, RefreshCw, ArrowUpRight, MessageSquare, Link as LinkIcon,
+  Calculator
 } from 'lucide-react';
 import { fetchCourses } from '../constants';
-import { getEligibleCourses } from '../utils/logic';
+import { getEligibleCourses, getMeanGradeDetails } from '../utils/logic';
 import { GradeToPoints, Grade } from '../types';
 type GroundedResponse = { text: string; sources: { title: string; uri: string }[] };
 
@@ -114,6 +115,8 @@ const Results: React.FC = () => {
   };
 
   const programmeLevel = getProgrammeLevel(meanGrade);
+  
+  const gradeDetails = getMeanGradeDetails(selectedSubjects);
   
   const eligibleCourses = useMemo(() => getEligibleCourses(meanGrade, allCourses), [meanGrade, allCourses]);
   
@@ -364,6 +367,9 @@ const Results: React.FC = () => {
                     <div className="text-4xl md:text-6xl font-black text-white flex items-baseline gap-2">
                       {meanGrade} <span className="text-[8px] md:text-xs text-green-500 font-black uppercase tracking-widest bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">VERIFIED</span>
                     </div>
+                    <div className="text-xs text-gray-400 mt-2">
+                      KNEC Method: Best {gradeDetails.bestSubjects.length} subjects used
+                    </div>
                   </div>
                   <div className="h-10 md:h-16 w-px bg-white/10 hidden md:block"></div>
                   <div className="space-y-1">
@@ -384,6 +390,58 @@ const Results: React.FC = () => {
               </div>
             </div>
           </header>
+
+          {/* KNEC Calculation Breakdown */}
+          <div className="bg-blue-600/5 border border-blue-600/20 rounded-2xl p-6 md:p-8 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Calculator className="text-blue-500" size={24} />
+              <h3 className="text-lg font-black text-blue-500">KNEC Official Mean Grade Calculation</h3>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">Best 7 Subjects Used</h4>
+                <div className="space-y-2">
+                  {gradeDetails.bestSubjects.map((subject: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center bg-black/5 rounded-lg px-3 py-2">
+                      <span className="text-sm font-medium">{subject.name}</span>
+                      <span className="text-sm font-black text-blue-500">{subject.grade} ({subject.points} pts)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">Calculation Breakdown</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Total Points:</span>
+                    <span className="text-sm font-black">{gradeDetails.totalPoints}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Average Points:</span>
+                    <span className="text-sm font-black">{gradeDetails.averagePoints.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Rounded Points:</span>
+                    <span className="text-sm font-black text-blue-500">{gradeDetails.roundedPoints}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Mean Grade:</span>
+                    <span className="text-lg font-black text-green-500">{gradeDetails.meanGrade}</span>
+                  </div>
+                </div>
+                
+                {gradeDetails.totalSubjects > 7 && (
+                  <div className="mt-4 p-3 bg-yellow-600/10 border border-yellow-600/30 rounded-lg">
+                    <p className="text-xs text-yellow-400">
+                      <strong>Note:</strong> {gradeDetails.totalSubjects - 7} subjects were excluded as per KNEC "Best 7" rule
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {paymentStep === 'unpaid' ? (
             <div className="relative">
