@@ -146,7 +146,13 @@ const AdminDashboard: React.FC = () => {
             <div className="bg-gray-900 border border-white/5 p-12 rounded-[3.5rem] shadow-2xl">
               <div className="flex items-center gap-4 mb-8">
                 <CheckCircle className="text-red-600" size={32} />
-                <h2 className="text-3xl font-black uppercase text-white">Manual Payment Approval</h2>
+                <h2 className="text-3xl font-black uppercase text-white">Student Access Code Generator</h2>
+              </div>
+              
+              <div className="bg-blue-600/10 border border-blue-600/30 p-6 rounded-2xl mb-8">
+                <p className="text-sm text-blue-400 font-medium">
+                  Generate access codes for students to unlock their reports. This is the primary method for report activation.
+                </p>
               </div>
               
               <div className="grid md:grid-cols-2 gap-8 mb-8">

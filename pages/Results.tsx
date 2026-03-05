@@ -339,7 +339,7 @@ const Results: React.FC = () => {
                       UNLOCK <br/><span className="text-red-600">INSIGHTS.</span>
                     </h2>
                     <p className="text-gray-400 text-lg md:text-2xl font-medium leading-relaxed max-w-xl">
-                      Your analysis is locked. Activate your report to access the real-time AI advisory, marketability metrics, and institution blueprints.
+                      Your analysis is locked. Request access from admin to unlock the real-time AI advisory, marketability metrics, and institution blueprints.
                     </p>
                   </div>
                   <div className="grid gap-6">
@@ -362,19 +362,19 @@ const Results: React.FC = () => {
                    <div className="relative bg-white text-black p-8 md:p-16 rounded-3xl md:rounded-[4rem] shadow-3xl border border-black/5">
                       <div className="relative z-10 space-y-8 md:space-y-12">
                         <div className="flex justify-between items-center">
-                          <div className="w-14 h-14 md:w-24 md:h-24 bg-red-600 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl animate-pulse">
-                            <LockKeyhole size={28} md:size={48} />
+                          <div className="w-14 h-14 md:w-24 md:h-24 bg-blue-600 rounded-2xl md:rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl animate-pulse">
+                            <Key size={28} md:size={48} />
                           </div>
                           <div className="text-right">
-                             <div className="text-[10px] md:text-[12px] font-black text-gray-400 uppercase tracking-[0.5em] mb-1">Activation Fee</div>
-                             <div className="text-4xl md:text-6xl font-black tracking-tighter">KES 150</div>
+                             <div className="text-[10px] md:text-[12px] font-black text-gray-400 uppercase tracking-[0.5em] mb-1">Access Required</div>
+                             <div className="text-4xl md:text-6xl font-black tracking-tighter">CODE</div>
                           </div>
                         </div>
                         <button 
                           onClick={() => { triggerHaptic(); setShowPaymentModal(true); }}
-                          className="w-full bg-black text-white py-5 md:py-8 rounded-2xl md:rounded-[2.5rem] font-black text-xl md:text-3xl flex items-center justify-center gap-4 md:gap-6 hover:bg-red-600 transition-all active:scale-95 group cursor-pointer touch-manipulation"
+                          className="w-full bg-black text-white py-5 md:py-8 rounded-2xl md:rounded-[2.5rem] font-black text-xl md:text-3xl flex items-center justify-center gap-4 md:gap-6 hover:bg-blue-600 transition-all active:scale-95 group cursor-pointer touch-manipulation"
                         >
-                          ACTIVATE NOW <ArrowRight size={24} md:size={36} className="group-hover:translate-x-3 transition-transform" />
+                          REQUEST ACCESS <ArrowRight size={24} md:size={36} className="group-hover:translate-x-3 transition-transform" />
                         </button>
                       </div>
                    </div>
@@ -560,75 +560,26 @@ const Results: React.FC = () => {
               <div className="p-6 md:p-12 space-y-8 md:space-y-10 overflow-y-auto">
                  {verifStage === 'IDLE' ? (
                    <>
-                     <div className="flex gap-4 mb-6">
-                       <button 
-                         onClick={() => setIsUsingOtp(false)}
-                         className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${
-                           !isUsingOtp 
-                             ? 'bg-red-600 text-white' 
-                             : 'bg-gray-100 text-gray-600'
-                         }`}
-                       >
-                         M-Pesa Payment
-                       </button>
-                       <button 
-                         onClick={() => setIsUsingOtp(true)}
-                         className={`flex-1 py-3 rounded-xl font-black text-sm transition-all ${
-                           isUsingOtp 
-                             ? 'bg-red-600 text-white' 
-                             : 'bg-gray-100 text-gray-600'
-                         }`}
-                       >
-                         Admin Access Code
-                       </button>
+                     <div className="bg-blue-600 text-white p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] shadow-xl">
+                        <p className="text-base md:text-xl font-bold leading-relaxed">
+                          Enter the <span className="font-black">ADMIN ACCESS CODE</span> provided by support.
+                          <br/>
+                          Contact admin to get your access code for report activation.
+                        </p>
                      </div>
-                     
-                     {!isUsingOtp ? (
-                       <>
-                         <div className="bg-red-600 text-white p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] shadow-xl">
-                            <p className="text-base md:text-xl font-bold leading-relaxed">
-                              1. Send <span className="text-black font-black bg-white px-2 py-0.5 rounded">KES 150</span> to M-Pesa <span className="font-black underline">0743315353</span>.
-                              <br/>
-                              2. Paste the <span className="font-black">ENTIRE M-Pesa Message</span> below for AI verification.
-                            </p>
-                         </div>
-                         <textarea 
-                            className="w-full h-32 md:h-48 bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-[2rem] p-5 md:p-8 font-medium focus:border-red-600 outline-none resize-none placeholder:text-gray-300 text-sm md:text-base"
-                            placeholder="Paste M-Pesa message here..."
-                            value={mpesaMessage}
-                            onChange={(e) => setMpesaMessage(e.target.value)}
-                         />
-                         <button 
-                          onClick={handleAiVerify} 
-                          className="w-full bg-black text-white py-5 md:py-8 rounded-xl md:rounded-[2rem] font-black text-xl md:text-2xl hover:bg-red-600 transition-all shadow-xl active:scale-95 cursor-pointer touch-manipulation"
-                         >
-                          VERIFY & UNLOCK
-                         </button>
-                       </>
-                     ) : (
-                       <>
-                         <div className="bg-blue-600 text-white p-6 md:p-10 rounded-2xl md:rounded-[2.5rem] shadow-xl">
-                            <p className="text-base md:text-xl font-bold leading-relaxed">
-                              Enter the <span className="font-black">ADMIN ACCESS CODE</span> provided by support.
-                              <br/>
-                              Contact admin if you've paid but M-Pesa verification failed.
-                            </p>
-                         </div>
-                         <input 
-                            type="text"
-                            className="w-full h-20 bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-[2rem] p-5 md:p-8 font-black text-center text-xl md:text-2xl focus:border-blue-600 outline-none placeholder:text-gray-300"
-                            placeholder="Enter access code (e.g., EDU123ABC)"
-                            value={accessCode}
-                            onChange={(e) => setAccessCode(e.target.value)}
-                         />
-                         <button 
-                          onClick={handleAccessCodeVerify} 
-                          className="w-full bg-blue-600 text-white py-5 md:py-8 rounded-xl md:rounded-[2rem] font-black text-xl md:text-2xl hover:bg-black transition-all shadow-xl active:scale-95 cursor-pointer touch-manipulation"
-                         >
-                          UNLOCK WITH CODE
-                         </button>
-                       </>
-                     )}
+                     <input 
+                        type="text"
+                        className="w-full h-20 bg-gray-50 border-2 border-gray-100 rounded-xl md:rounded-[2rem] p-5 md:p-8 font-black text-center text-xl md:text-2xl focus:border-blue-600 outline-none placeholder:text-gray-300"
+                        placeholder="Enter access code (e.g., EDU123ABC)"
+                        value={accessCode}
+                        onChange={(e) => setAccessCode(e.target.value)}
+                     />
+                     <button 
+                      onClick={handleAccessCodeVerify} 
+                      className="w-full bg-blue-600 text-white py-5 md:py-8 rounded-xl md:rounded-[2rem] font-black text-xl md:text-2xl hover:bg-black transition-all shadow-xl active:scale-95 cursor-pointer touch-manipulation"
+                     >
+                      UNLOCK WITH CODE
+                     </button>
                    </>
                  ) : (
                    <div className="py-12 md:py-24 text-center space-y-8 md:space-y-10">
