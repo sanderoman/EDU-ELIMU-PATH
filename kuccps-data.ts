@@ -778,9 +778,29 @@ export const generateKUCCPSCourses = (): Course[] => {
     "KCA University", "Zetech University"
   ];
 
+  const tvetInstitutions = [
+    "Kenya Coast National Polytechnic", "Kisumu National Polytechnic", "Eldoret National Polytechnic", 
+    "Kabete National Polytechnic", "Meru National Polytechnic", "Nyeri National Polytechnic", 
+    "Sigalagala National Polytechnic", "Kitale National Polytechnic", "Northeastern National Polytechnic",
+    "Bungoma National Polytechnic", "Keroka Technical Training Institute", "Kiambu Institute of Science and Technology",
+    "Ramogi Institute of Advanced Technology", "Friends College Kaimosi", "Wote Technical Training Institute",
+    "Kenya Technical Training College", "Mombasa Technical Training Institute", "Nakuru Technical Training Institute",
+    "Kisii Technical Training Institute", "Eldoret Technical Training Institute", "Thika Technical Training Institute"
+  ];
+
+  const collegeInstitutions = [
+    "KMTC Nairobi", "KMTC Mombasa", "KMTC Kisumu", "KMTC Nakuru", "KMTC Eldoret", "KMTC Machakos",
+    "KMTC Thika", "KMTC Voi", "KMTC Garissa", "KMTC Lodwar", "KMTC Embu", "KMTC Kakamega",
+    "KMTC Nyeri", "KMTC Meru", "KMTC Bomet", "KMTC Homa Bay", "KMTC Kapenguria", "KMTC Msambweni",
+    "KMTC Murang'a", "KMTC Webuye", "KMTC Chuka", "KMTC Makindu", "KMTC Kabarnet", "KMTC Kilifi",
+    "KMTC Kwale", "KMTC Kitui", "KMTC Migori", "KMTC Nyamira", "KMTC Samburu", "KMTC Turkana",
+    "KMTC Wajir", "KMTC Mandera", "KMTC Marsabit", "KMTC Isiolo", "KMTC Laikipia", "KMTC Nandi",
+    "KMTC Uasin Gishu", "KMTC Trans Nzoia", "KMTC West Pokot", "KMTC Elgeyo Marakwet", "KMTC Baringo"
+  ];
+
+  // Generate Degree Programmes (C+ and above)
   Object.values(KUCCPS_CLUSTERS).forEach(cluster => {
     cluster.programmes.forEach(programme => {
-      // Generate course for multiple institutions
       institutions.slice(0, 10).forEach((institution, index) => {
         const minGrade = index < 3 ? 'A' : index < 6 ? 'B+' : index < 8 ? 'B' : 'C+';
         courses.push({
@@ -791,9 +811,104 @@ export const generateKUCCPSCourses = (): Course[] => {
           minGrade,
           clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
           duration: '4 Years',
-          description: `Official KUCCPS programme in ${cluster.name}`,
+          description: `Official KUCCPS degree programme in ${cluster.name}`,
           kuccpsLink: 'https://students.kuccps.net/programmes/'
         });
+      });
+    });
+  });
+
+  // Generate Diploma Programmes (C and C-)
+  const diplomaProgrammes = [
+    "Diploma in Business Management", "Diploma in Accounting", "Diploma in Human Resource Management",
+    "Diploma in Marketing", "Diploma in Supply Chain Management", "Diploma in Information Technology",
+    "Diploma in Computer Science", "Diploma in Software Engineering", "Diploma in Cybersecurity",
+    "Diploma in Electrical Engineering", "Diploma in Mechanical Engineering", "Diploma in Civil Engineering",
+    "Diploma in Chemical Engineering", "Diploma in Agricultural Engineering", "Diploma in Food Technology",
+    "Diploma in Nursing", "Diploma in Clinical Medicine", "Diploma in Pharmacy", "Diploma in Medical Laboratory",
+    "Diploma in Nutrition", "Diploma in Hospitality Management", "Diploma in Tourism Management",
+    "Diploma in Culinary Arts", "Diploma in Fashion Design", "Diploma in Interior Design",
+    "Diploma in Graphic Design", "Diploma in Journalism", "Diploma in Mass Communication",
+    "Diploma in Early Childhood Education", "Diploma in Primary Education", "Diploma in Secondary Education",
+    "Diploma in Social Work", "Diploma in Community Development", "Diploma in Environmental Management",
+    "Diploma in Agriculture", "Diploma in Animal Health", "Diploma in Horticulture", "Diploma in Aquaculture"
+  ];
+
+  diplomaProgrammes.forEach(programme => {
+    institutions.slice(0, 15).forEach((institution, index) => {
+      const minGrade = index < 5 ? 'C' : 'C-';
+      courses.push({
+        id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
+        name: programme,
+        institution,
+        type: 'College',
+        minGrade,
+        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        duration: '3 Years',
+        description: `KUCCPS diploma programme in ${programme.replace('Diploma in ', '')}`,
+        kuccpsLink: 'https://students.kuccps.net/programmes/'
+      });
+    });
+  });
+
+  // Generate Certificate & Artisan Programmes (D+)
+  const certificateProgrammes = [
+    "Certificate in Business Management", "Certificate in Accounting", "Certificate in IT",
+    "Certificate in Web Development", "Certificate in Networking", "Certificate in Cybersecurity",
+    "Certificate in Electrical Installation", "Certificate in Plumbing", "Certificate in Welding",
+    "Certificate in Carpentry", "Certificate in Masonry", "Certificate in Automotive Engineering",
+    "Certificate in Mechanical Engineering", "Certificate in Civil Engineering", "Certificate in Building Construction",
+    "Certificate in Agriculture", "Certificate in Animal Husbandry", "Certificate in Crop Production",
+    "Certificate in Food Processing", "Certificate in Baking", "Certificate in Catering",
+    "Certificate in Hairdressing", "Certificate in Beauty Therapy", "Certificate in Fashion Design",
+    "Certificate in Tailoring", "Certificate in Textile Design", "Certificate in Graphic Design",
+    "Certificate in Photography", "Certificate in Video Production", "Certificate in Journalism",
+    "Certificate in Early Childhood Development", "Certificate in Teacher Training", "Certificate in Social Work",
+    "Certificate in Community Development", "Certificate in Environmental Conservation", "Certificate in Horticulture"
+  ];
+
+  certificateProgrammes.forEach(programme => {
+    tvetInstitutions.forEach((institution, index) => {
+      const minGrade = 'D+';
+      courses.push({
+        id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
+        name: programme,
+        institution,
+        type: 'TVET',
+        minGrade,
+        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        duration: '2 Years',
+        description: `KUCCPS certificate programme in ${programme.replace('Certificate in ', '')}`,
+        kuccpsLink: 'https://students.kuccps.net/programmes/'
+      });
+    });
+  });
+
+  // Generate Artisan Courses (D+)
+  const artisanProgrammes = [
+    "Artisan in Electrical Installation", "Artisan in Plumbing", "Artisan in Welding",
+    "Artisan in Carpentry", "Artisan in Masonry", "Artisan in Painting", "Artisan in Tiling",
+    "Artisan in Automotive Mechanics", "Artisan in Motor Vehicle Technology", "Artisan in Metal Fabrication",
+    "Artisan in Tailoring", "Artisan in Dressmaking", "Artisan in Embroidery", "Artisan in Knitting",
+    "Artisan in Hairdressing", "Artisan in Beauty Therapy", "Artisan in Nail Technology", "Artisan in Makeup",
+    "Artisan in Catering", "Artisan in Food Service", "Artisan in Baking", "Artisan in Pastry",
+    "Artisan in Agriculture", "Artisan in Animal Husbandry", "Artisan in Crop Production", "Artisan in Horticulture",
+    "Artisan in Leatherwork", "Artisan in Basketry", "Artisan in Pottery", "Artisan in Woodcarving"
+  ];
+
+  artisanProgrammes.forEach(programme => {
+    tvetInstitutions.slice(0, 15).forEach((institution, index) => {
+      const minGrade = 'D+';
+      courses.push({
+        id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
+        name: programme,
+        institution,
+        type: 'TTC',
+        minGrade,
+        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        duration: '1 Year',
+        description: `KUCCPS artisan programme in ${programme.replace('Artisan in ', '')}`,
+        kuccpsLink: 'https://students.kuccps.net/programmes/'
       });
     });
   });

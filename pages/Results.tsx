@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { fetchCourses } from '../constants';
 import { getEligibleCourses } from '../utils/logic';
+import { GradeToPoints, Grade } from '../types';
 type GroundedResponse = { text: string; sources: { title: string; uri: string }[] };
 
 const postJson = async (url: string, body: any) => {
@@ -70,10 +71,54 @@ const Results: React.FC = () => {
     meanGrade: 'E'
   };
 
+  const getProgrammeLevel = (grade: string) => {
+    const points = GradeToPoints[grade as keyof typeof GradeToPoints];
+    const cpPoints = GradeToPoints['C+' as keyof typeof GradeToPoints];
+    const cPoints = GradeToPoints['C' as keyof typeof GradeToPoints];
+    const cMinusPoints = GradeToPoints['C-' as keyof typeof GradeToPoints];
+    const dPlusPoints = GradeToPoints['D+' as keyof typeof GradeToPoints];
+    
+    if (points >= cpPoints) {
+      return {
+        level: "Degree Programmes",
+        description: "You qualify for university degree programmes",
+        color: "text-green-500",
+        bgColor: "bg-green-600/10",
+        borderColor: "border-green-600/30"
+      };
+    } else if (points >= cMinusPoints && points <= cPoints) {
+      return {
+        level: "Diploma Programmes",
+        description: "You qualify for diploma programmes across universities, TVET, and colleges",
+        color: "text-blue-500",
+        bgColor: "bg-blue-600/10",
+        borderColor: "border-blue-600/30"
+      };
+    } else if (points >= dPlusPoints && points < cMinusPoints) {
+      return {
+        level: "Certificate & Artisan Programmes",
+        description: "You qualify for technical certificate, artisan, and bridging courses",
+        color: "text-orange-500",
+        bgColor: "bg-orange-600/10",
+        borderColor: "border-orange-600/30"
+      };
+    } else {
+      return {
+        level: "No Programmes Available",
+        description: "Your grade is below the minimum requirement for KUCCPS programmes",
+        color: "text-red-500",
+        bgColor: "bg-red-600/10",
+        borderColor: "border-red-600/30"
+      };
+    }
+  };
+
+  const programmeLevel = getProgrammeLevel(meanGrade);
+  
   const eligibleCourses = useMemo(() => getEligibleCourses(meanGrade, allCourses), [meanGrade, allCourses]);
   
   const filteredCourses = useMemo(() => {
-    return eligibleCourses.filter(course => 
+    return eligibleCourses.filter((course: any) => 
       course.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
       course.institution.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -318,6 +363,16 @@ const Results: React.FC = () => {
                     <div className="text-gray-500 text-[9px] md:text-[11px] font-black uppercase tracking-[0.4em]">Merit Grade</div>
                     <div className="text-4xl md:text-6xl font-black text-white flex items-baseline gap-2">
                       {meanGrade} <span className="text-[8px] md:text-xs text-green-500 font-black uppercase tracking-widest bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">VERIFIED</span>
+                    </div>
+                  </div>
+                  <div className="h-10 md:h-16 w-px bg-white/10 hidden md:block"></div>
+                  <div className="space-y-1">
+                    <div className="text-gray-500 text-[9px] md:text-[11px] font-black uppercase tracking-[0.4em]">Programme Level</div>
+                    <div className={`${programmeLevel.color} font-black text-lg md:text-2xl uppercase tracking-tight`}>
+                      {programmeLevel.level}
+                    </div>
+                    <div className="text-xs text-gray-400 max-w-[200px]">
+                      {programmeLevel.description}
                     </div>
                   </div>
                   <div className="h-10 md:h-16 w-px bg-white/10 hidden md:block"></div>

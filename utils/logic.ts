@@ -18,21 +18,34 @@ export const calculateMeanGrade = (grades: SubjectGrade[]): Grade => {
 export const getEligibleCourses = (meanGrade: Grade, courses: Course[]): Course[] => {
   const meanPoints = GradeToPoints[meanGrade];
   const cpPoints = GradeToPoints['C+'];
-  const dPoints = GradeToPoints['D'];
-  const dMinusPoints = GradeToPoints['D-'];
+  const cPoints = GradeToPoints['C'];
+  const cMinusPoints = GradeToPoints['C-'];
+  const dPlusPoints = GradeToPoints['D+'];
   
   return courses.filter(course => {
     const minPoints = GradeToPoints[course.minGrade];
     
-    // RULE 1: Universities (Degree) require C+ and above strictly.
-    if (course.type === 'University' && meanPoints < cpPoints) {
-      return false;
+    // KUCCPS Grade-Based Programme Level System
+    
+    // RULE 1: C+ and above = Degree Programmes
+    if (meanPoints >= cpPoints) {
+      // Student qualifies for degree programmes
+      return course.type === 'University' && meanPoints >= minPoints;
     }
     
-    // RULE 2: C Plain and below students are matched with Colleges, TVETs, and TTCs.
-    // The filter naturally allows them if their points meet the course minGrade.
+    // RULE 2: C and C- = Diploma Programmes
+    if (meanPoints >= cMinusPoints && meanPoints <= cPoints) {
+      // Student qualifies for diploma programmes across universities, TVET, and colleges
+      return (course.type === 'College' || course.type === 'TVET') && meanPoints >= minPoints;
+    }
     
-    // Check general point eligibility
-    return meanPoints >= minPoints;
+    // RULE 3: D+ = Certificate & Artisan Programmes
+    if (meanPoints >= dPlusPoints && meanPoints < cMinusPoints) {
+      // Student qualifies for technical certificate, artisan, and bridging courses
+      return (course.type === 'TVET' || course.type === 'TTC') && meanPoints >= minPoints;
+    }
+    
+    // Below D+ - no programmes available
+    return false;
   });
 };
