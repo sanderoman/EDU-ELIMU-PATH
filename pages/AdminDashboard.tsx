@@ -32,17 +32,16 @@ const AdminDashboard: React.FC = () => {
 
   const loadKeys = async () => {
     try {
-      const response = await fetch('/api/payment/admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': 'admin-secret-key' // In production, get from secure storage
-        },
-        body: JSON.stringify({ action: 'getAccessCodes' })
-      });
+      console.log('[CLIENT] Loading keys');
+
+      const response = await fetch('/api/get-keys');
+
+      console.log('[CLIENT] Load keys response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
+        console.log('[CLIENT] Loaded keys:', data.codes?.length || 0);
+
         setMasterKeys(data.codes.map((code: any) => ({
           id: code.id,
           code: code.code,
@@ -55,9 +54,12 @@ const AdminDashboard: React.FC = () => {
           linkedPhones: code.linkedPhones || [],
           createdBy: code.createdBy || 'system'
         })));
+      } else {
+        const errorText = await response.text();
+        console.error('[CLIENT] Load keys failed:', errorText);
       }
     } catch (error) {
-      console.error('Failed to load keys:', error);
+      console.error('[CLIENT] Load keys error:', error);
     }
   };
 
@@ -71,30 +73,35 @@ const AdminDashboard: React.FC = () => {
 
   const generateKey = async () => {
     if (!newKeyLabel.trim()) return alert("Label required.");
-    
+
     setIsGeneratingKey(true);
     try {
-      const response = await fetch('/api/payment/admin', {
+      console.log('[CLIENT] Generating master key:', newKeyLabel);
+
+      const response = await fetch('/api/generate-key', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': 'admin-secret-key' // In production, get from secure storage
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          action: 'createKey',
-          label: newKeyLabel.trim(),
+          studentName: newKeyLabel.trim(),
+          studentPhone: 'system-admin', // Placeholder for master keys
           expiryHours: keyExpiryHours
         })
       });
 
+      console.log('[CLIENT] Master key response status:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('[CLIENT] Master key response data:', data);
+
         setMasterKeys(prev => [{
           id: data.key.id,
           code: data.key.code,
           label: data.key.label,
-          createdAt: data.key.createdAt,
-          activatedAt: data.key.activatedAt,
+          createdAt: data.key.createdAt || new Date().toISOString(),
+          activatedAt: data.key.activatedAt || new Date().toISOString(),
           expiresAt: data.key.expiresAt,
           status: data.key.status,
           usageCount: data.key.usageCount || 0,
@@ -104,11 +111,13 @@ const AdminDashboard: React.FC = () => {
         setNewKeyLabel('');
         setKeyExpiryHours(24);
       } else {
-        alert('Failed to generate key');
+        const errorText = await response.text();
+        console.error('[CLIENT] Master key generation failed:', errorText);
+        alert('Failed to generate master key');
       }
     } catch (error) {
-      console.error('Failed to generate key:', error);
-      alert('Failed to generate key');
+      console.error('[CLIENT] Master key generation error:', error);
+      alert('Failed to generate master key');
     } finally {
       setIsGeneratingKey(false);
     }
@@ -117,26 +126,30 @@ const AdminDashboard: React.FC = () => {
   const deleteKey = async (id: string) => {
     setIsActivatingKey(true);
     try {
-      const response = await fetch('/api/payment/admin', {
+      console.log('[CLIENT] Deactivating key:', id);
+
+      const response = await fetch('/api/deactivate-key', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': 'admin-secret-key'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          action: 'deactivateKey',
           keyId: id
         })
       });
 
+      console.log('[CLIENT] Deactivate response status:', response.status);
+
       if (response.ok) {
         setMasterKeys(prev => prev.filter(k => k.id !== id));
       } else {
-        alert('Failed to delete key');
+        const errorText = await response.text();
+        console.error('[CLIENT] Deactivate failed:', errorText);
+        alert('Failed to deactivate key');
       }
     } catch (error) {
-      console.error('Failed to delete key:', error);
-      alert('Failed to delete key');
+      console.error('[CLIENT] Deactivate error:', error);
+      alert('Failed to deactivate key');
     } finally {
       setIsActivatingKey(false);
     }
@@ -149,47 +162,37 @@ const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/payment/admin', {
+      console.log('[CLIENT] Starting key generation for:', studentName, studentPhone);
+
+      const response = await fetch('/api/generate-key', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-admin-key': 'admin-secret-key'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          action: 'createKey',
-          label: `Access for ${studentName}`,
+          studentName: studentName.trim(),
+          studentPhone: studentPhone.trim(),
           expiryHours: 24 // 24 hours for student access
         })
       });
 
+      console.log('[CLIENT] Generate key response status:', response.status);
+      console.log('[CLIENT] Generate key response ok:', response.ok);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('[CLIENT] Generate key response data:', data);
         setAccessCode(data.key.code);
 
-        // Now activate the key immediately
-        const activateResponse = await fetch('/api/payment/admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-key': 'admin-secret-key'
-          },
-          body: JSON.stringify({
-            action: 'activateKey',
-            keyId: data.key.id
-          })
-        });
-
-        if (activateResponse.ok) {
-          alert(`Access Code Generated: ${data.key.code}\nShare this with ${studentName}\n\nKey ID: ${data.key.id}`);
-        } else {
-          alert('Key created but activation failed. Please activate manually in the Keys section.');
-        }
+        alert(`Access Code Generated: ${data.key.code}\nShare this with ${studentName}\n\nKey ID: ${data.key.id}`);
       } else {
-        alert('Failed to generate access code');
+        const errorText = await response.text();
+        console.error('[CLIENT] Generate key failed:', response.status, errorText);
+        alert(`Failed to generate access code: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Failed to generate access code:', error);
-      alert('Failed to generate access code');
+      console.error('[CLIENT] Network error during key generation:', error);
+      alert(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
