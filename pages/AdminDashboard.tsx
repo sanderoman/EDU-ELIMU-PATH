@@ -43,15 +43,15 @@ const AdminDashboard: React.FC = () => {
         console.log('[CLIENT] Loaded keys:', data.codes?.length || 0);
 
         setMasterKeys(data.codes.map((code: any) => ({
-          id: code.id,
-          code: code.code,
-          label: code.label,
-          createdAt: code.createdAt,
+          id: code.id || `key-${Date.now()}`,
+          code: code.code || 'UNKNOWN',
+          label: code.label || 'Unnamed Key',
+          createdAt: code.createdAt || new Date().toISOString(),
           activatedAt: code.activatedAt,
           expiresAt: code.expiresAt,
-          status: code.status,
+          status: code.status || 'inactive',
           usageCount: code.usageCount || 0,
-          linkedPhones: code.linkedPhones || [],
+          linkedPhones: Array.isArray(code.linkedPhones) ? code.linkedPhones : [],
           createdBy: code.createdBy || 'system'
         })));
       } else {
@@ -449,9 +449,20 @@ const AdminDashboard: React.FC = () => {
                            <div className="text-white font-black text-xl">{k.label}</div>
                            <div className="text-gray-600 text-[10px] font-bold mt-1 uppercase">
                              {k.status === 'active' ? '✓ Active' : k.status === 'inactive' ? 'Inactive' : 'Expired'} • 
-                             {k.usageCount || 0} uses
+                             {(k.usageCount || 0)} uses
                            </div>
-                           {k.expiresAt && <div className="text-gray-700 text-[9px] font-bold mt-1">Expires: {new Date(k.expiresAt).toLocaleString()}</div>}
+                           {k.expiresAt && (
+                             <div className="text-gray-700 text-[9px] font-bold mt-1">
+                               Expires: {(() => {
+                                 try {
+                                   const expiryDate = new Date(k.expiresAt);
+                                   return isNaN(expiryDate.getTime()) ? 'Invalid Date' : expiryDate.toLocaleString();
+                                 } catch {
+                                   return 'Invalid Date';
+                                 }
+                               })()}
+                             </div>
+                           )}
                          </div>
                       </div>
                       <button onClick={() => deleteKey(k.id)} disabled={isActivatingKey} className="p-4 text-gray-700 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Trash2 size={24} /></button>

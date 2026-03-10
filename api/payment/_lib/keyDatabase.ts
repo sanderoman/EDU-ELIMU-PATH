@@ -19,13 +19,13 @@ export interface KeyRecord {
 
 // Centralized in-memory database (replace with real DB in production)
 let keyDatabase: KeyRecord[] = [
-  // Pre-loaded admin keys for testing
+  // Pre-loaded admin keys for testing - using fixed timestamps to avoid restart issues
   {
     id: 'admin-001',
     code: 'MASTER001',
     label: 'Admin Master Key',
-    createdAt: new Date().toISOString(),
-    activatedAt: new Date().toISOString(),
+    createdAt: '2024-01-01T00:00:00.000Z', // Fixed timestamp
+    activatedAt: '2024-01-01T00:00:00.000Z', // Fixed timestamp
     status: 'active',
     createdBy: 'system',
     usageCount: 0,
@@ -35,8 +35,8 @@ let keyDatabase: KeyRecord[] = [
     id: 'demo-001',
     code: 'DEMO123',
     label: 'Demo Access Key',
-    createdAt: new Date().toISOString(),
-    activatedAt: new Date().toISOString(),
+    createdAt: '2024-01-01T00:00:00.000Z', // Fixed timestamp
+    activatedAt: '2024-01-01T00:00:00.000Z', // Fixed timestamp
     status: 'active',
     createdBy: 'system',
     usageCount: 0,
