@@ -195,7 +195,7 @@ const Results: React.FC = () => {
     try {
       console.log(`[CLIENT] Validating access code: ${accessCode}`);
 
-      const response = await fetch('/validate-key', {
+      const response = await fetch('/api/validate-key', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
