@@ -17,6 +17,21 @@ export interface University {
   apiSlug: string; // Used for hypothetical /api/universities/:apiSlug/courses
 }
 
+export interface CutoffInfo {
+  /** numeric cluster point cutoff from KUCCPS data */
+  clusterPoints: number;
+  /** minimum mean grade requirement if specified (e.g. C+, B- etc) */
+  minGradeRequirement?: Grade;
+  /** list of subjects required by the programme (cluster-specific) */
+  requiredSubjects?: string[];
+  /**
+   * Notes about sponsorship or category-specific variations (public/private/etc).
+   * KUCCPS cutoffs generally apply to all categories but this field can document
+   * known differences if necessary.
+   */
+  comments?: string;
+}
+
 export interface Course {
   id: string;
   name: string;
@@ -25,6 +40,20 @@ export interface Course {
   duration: string;
   minGrade: Grade;
   clusterSubjects: string[];
+  /**
+   * Representative cluster point cutoff used by eligibility filter.
+   * Numeric value (e.g. sum of top 3 subject points) on a 0–36 scale.
+   * May be overridden by `cutoffPoints` from real data.
+   */
+  clusterPoints?: number;
+  /**
+   * Explicit KUCCPS cutoff information (takes precedence over clusterPoints)
+   */
+  cutoffPoints?: number;
+  /**
+   * Subjects that must be present among the student's best subjects.
+   */
+  requiredSubjects?: string[];
   description?: string;
   kuccpsLink?: string;
 }
@@ -47,6 +76,13 @@ export interface MasterKey {
   code: string;
   label: string;
   createdAt: string;
+  activatedAt?: string;
+  expiresAt?: string;
+  status: 'active' | 'inactive' | 'expired';
+  createdBy: string;
+  lastValidatedAt?: string;
+  usageCount: number;
+  linkedPhones: string[];
 }
 
 export const GradeToPoints: Record<Grade, number> = {

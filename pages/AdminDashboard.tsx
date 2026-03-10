@@ -12,6 +12,9 @@ const AdminDashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<PaymentRecord[]>([]);
   const [masterKeys, setMasterKeys] = useState<MasterKey[]>([]);
   const [newKeyLabel, setNewKeyLabel] = useState('');
+  const [keyExpiryHours, setKeyExpiryHours] = useState<number>(24); // Default 24 hours
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
+  const [isActivatingKey, setIsActivatingKey] = useState<boolean>(false);
   const [showRawMsg, setShowRawMsg] = useState<string | null>(null);
   const [studentName, setStudentName] = useState('');
   const [studentPhone, setStudentPhone] = useState('');
@@ -19,13 +22,44 @@ const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (isLoggedIn) {
+      loadKeys();
       const load = () => {
         setTransactions(JSON.parse(localStorage.getItem('edupath_transactions') || '[]'));
-        setMasterKeys(JSON.parse(localStorage.getItem('edupath_master_keys') || '[]'));
       };
       load();
     }
   }, [isLoggedIn]);
+
+  const loadKeys = async () => {
+    try {
+      const response = await fetch('/api/payment/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-secret-key' // In production, get from secure storage
+        },
+        body: JSON.stringify({ action: 'getAccessCodes' })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMasterKeys(data.codes.map((code: any) => ({
+          id: code.id,
+          code: code.code,
+          label: code.label,
+          createdAt: code.createdAt,
+          activatedAt: code.activatedAt,
+          expiresAt: code.expiresAt,
+          status: code.status,
+          usageCount: code.usageCount || 0,
+          linkedPhones: code.linkedPhones || [],
+          createdBy: code.createdBy || 'system'
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to load keys:', error);
+    }
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,25 +69,77 @@ const AdminDashboard: React.FC = () => {
     else alert('Unauthorized Terminal Access Attempt.');
   };
 
-  const generateKey = () => {
+  const generateKey = async () => {
     if (!newKeyLabel.trim()) return alert("Label required.");
-    const newCode = crypto.randomUUID().replace(/-/g, '').substring(0, 6).toUpperCase();
-    const newKey: MasterKey = {
-      id: crypto.randomUUID().replace(/-/g, '').substring(0, 9),
-      code: newCode,
-      label: newKeyLabel,
-      createdAt: new Date().toISOString()
-    };
-    const updated = [newKey, ...masterKeys];
-    setMasterKeys(updated);
-    localStorage.setItem('edupath_master_keys', JSON.stringify(updated));
-    setNewKeyLabel('');
+    
+    setIsGeneratingKey(true);
+    try {
+      const response = await fetch('/api/payment/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-secret-key' // In production, get from secure storage
+        },
+        body: JSON.stringify({
+          action: 'createKey',
+          label: newKeyLabel.trim(),
+          expiryHours: keyExpiryHours
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMasterKeys(prev => [{
+          id: data.key.id,
+          code: data.key.code,
+          label: data.key.label,
+          createdAt: data.key.createdAt,
+          activatedAt: data.key.activatedAt,
+          expiresAt: data.key.expiresAt,
+          status: data.key.status,
+          usageCount: data.key.usageCount || 0,
+          linkedPhones: data.key.linkedPhones || [],
+          createdBy: data.key.createdBy || 'admin'
+        }, ...prev]);
+        setNewKeyLabel('');
+        setKeyExpiryHours(24);
+      } else {
+        alert('Failed to generate key');
+      }
+    } catch (error) {
+      console.error('Failed to generate key:', error);
+      alert('Failed to generate key');
+    } finally {
+      setIsGeneratingKey(false);
+    }
   };
 
-  const deleteKey = (id: string) => {
-    const updated = masterKeys.filter(k => k.id !== id);
-    setMasterKeys(updated);
-    localStorage.setItem('edupath_master_keys', JSON.stringify(updated));
+  const deleteKey = async (id: string) => {
+    setIsActivatingKey(true);
+    try {
+      const response = await fetch('/api/payment/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-secret-key'
+        },
+        body: JSON.stringify({
+          action: 'deactivateKey',
+          keyId: id
+        })
+      });
+
+      if (response.ok) {
+        setMasterKeys(prev => prev.filter(k => k.id !== id));
+      } else {
+        alert('Failed to delete key');
+      }
+    } catch (error) {
+      console.error('Failed to delete key:', error);
+      alert('Failed to delete key');
+    } finally {
+      setIsActivatingKey(false);
+    }
   };
 
   const generateAccessCode = () => {
@@ -307,8 +393,16 @@ const AdminDashboard: React.FC = () => {
                         value={newKeyLabel} onChange={(e) => setNewKeyLabel(e.target.value)}
                       />
                    </div>
-                   <button onClick={generateKey} className="w-full bg-red-600 text-white py-6 rounded-2xl font-black text-lg flex items-center justify-center gap-4 hover:scale-[1.02] transition-all">
-                     <Key size={24} /> GENERATE KEY
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest ml-2">Expiry Hours</label>
+                      <input 
+                        type="number" placeholder="24"
+                        className="w-full h-16 bg-black border border-white/5 rounded-2xl px-6 font-black text-white focus:border-red-600 outline-none transition-all"
+                        value={keyExpiryHours} onChange={(e) => setKeyExpiryHours(parseInt(e.target.value) || 24)}
+                      />
+                   </div>
+                   <button onClick={generateKey} disabled={isGeneratingKey} className="w-full bg-red-600 text-white py-6 rounded-2xl font-black text-lg flex items-center justify-center gap-4 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                     <Key size={24} /> {isGeneratingKey ? 'GENERATING...' : 'GENERATE KEY'}
                    </button>
                 </div>
              </div>
@@ -317,9 +411,16 @@ const AdminDashboard: React.FC = () => {
                    <div key={k.id} className="bg-gray-900/50 border border-white/5 p-8 rounded-[2.5rem] flex items-center justify-between">
                       <div className="flex items-center gap-6">
                          <div className="w-16 h-16 bg-red-600/10 rounded-2xl flex items-center justify-center text-red-600 font-black text-2xl tracking-widest">{k.code}</div>
-                         <div><div className="text-white font-black text-xl">{k.label}</div><div className="text-gray-600 text-[10px] font-bold mt-1 uppercase">Issued: {new Date(k.createdAt).toLocaleDateString()}</div></div>
+                         <div>
+                           <div className="text-white font-black text-xl">{k.label}</div>
+                           <div className="text-gray-600 text-[10px] font-bold mt-1 uppercase">
+                             {k.status === 'active' ? '✓ Active' : k.status === 'inactive' ? 'Inactive' : 'Expired'} • 
+                             {k.usageCount || 0} uses
+                           </div>
+                           {k.expiresAt && <div className="text-gray-700 text-[9px] font-bold mt-1">Expires: {new Date(k.expiresAt).toLocaleString()}</div>}
+                         </div>
                       </div>
-                      <button onClick={() => deleteKey(k.id)} className="p-4 text-gray-700 hover:text-red-600 transition-colors"><Trash2 size={24} /></button>
+                      <button onClick={() => deleteKey(k.id)} disabled={isActivatingKey} className="p-4 text-gray-700 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><Trash2 size={24} /></button>
                    </div>
                 ))}
              </div>

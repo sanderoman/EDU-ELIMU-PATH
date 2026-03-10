@@ -6,6 +6,16 @@ import { Grade, GradeToPoints, SubjectGrade } from '../types';
 import { SUBJECT_GROUPS } from '../constants';
 import { calculateMeanGrade } from '../utils/logic';
 
+// KUCCPS cluster point calculation following official methodology
+const calculateKUCCPSClusterScore = (grades: SubjectGrade[]): number => {
+  // KUCCPS uses sum of best 4 subjects for cluster calculation (out of 48 max)
+  // This is a general cluster score - specific programmes use their own cluster subjects
+  return grades
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 4)
+    .reduce((sum, g) => sum + g.points, 0);
+};
+
 const GradeInput: React.FC = () => {
   const navigate = useNavigate();
   const [studentName, setStudentName] = useState('');
@@ -44,6 +54,9 @@ const GradeInput: React.FC = () => {
     }
 
     const meanGrade = calculateMeanGrade(selectedGrades);
+    // KUCCPS cluster score calculation: cluster-specific methodology (no artificial cap)
+    const clusterScore = calculateKUCCPSClusterScore(selectedGrades);
+
     navigate('/results', { state: { studentName, selectedSubjects: selectedGrades, meanGrade } });
   };
 

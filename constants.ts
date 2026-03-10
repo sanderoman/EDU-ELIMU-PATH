@@ -1,5 +1,5 @@
 
-import { University, Course, Grade } from './types';
+import { University, Course, Grade, GradeToPoints } from './types';
 import { generateKUCCPSCourses } from './kuccps-data';
 
 const LOGO_PLACEHOLDERS = [
@@ -123,20 +123,20 @@ const TEMPLATES = {
   ],
   DIPLOMA: [
     { name: 'Clinical Medicine', grade: 'C' as Grade }, { name: 'Nursing (KRCHN)', grade: 'C' as Grade },
-    { name: 'Pharmacy Tech', grade: 'C' as Grade }, { name: 'Medical Lab', grade: 'C' as Grade },
+    { name: 'Pharmacy Technology', grade: 'C' as Grade }, { name: 'Medical Laboratory', grade: 'C' as Grade },
     { name: 'Radiography', grade: 'C' as Grade }, { name: 'Electrical Engineering', grade: 'C' as Grade },
-    { name: 'Civil Eng Diploma', grade: 'C-' as Grade }, { name: 'Business Management', grade: 'C-' as Grade },
-    { name: 'Human Resource', grade: 'C-' as Grade }, { name: 'Nutrition', grade: 'C-' as Grade },
+    { name: 'Civil Engineering', grade: 'C-' as Grade }, { name: 'Business Management', grade: 'C-' as Grade },
+    { name: 'Human Resource Management', grade: 'C-' as Grade }, { name: 'Nutrition & Dietetics', grade: 'C-' as Grade },
     { name: 'Social Work', grade: 'C-' as Grade }, { name: 'Catering & Hotel Management', grade: 'C' as Grade },
-    { name: 'ICT Diploma', grade: 'C-' as Grade }, { name: 'Supply Chain', grade: 'C-' as Grade },
+    { name: 'Information Technology', grade: 'C-' as Grade }, { name: 'Supply Chain Management', grade: 'C-' as Grade },
     { name: 'Journalism', grade: 'C-' as Grade }, { name: 'Public Relations', grade: 'C-' as Grade }
   ],
   CERT_ARTISAN: [
-    { name: 'Certificate in Plumbing', grade: 'D' as Grade }, { name: 'Certificate in Electrical', grade: 'D' as Grade },
-    { name: 'Artisan in Welding', grade: 'E' as Grade }, { name: 'Artisan in Masonry', grade: 'E' as Grade },
-    { name: 'Certificate in Catering', grade: 'D' as Grade }, { name: 'Artisan in Carpentry', grade: 'E' as Grade },
-    { name: 'Certificate in Beauty', grade: 'D-' as Grade }, { name: 'Certificate in ICT', grade: 'D' as Grade },
-    { name: 'Artisan in Motor Vehicle', grade: 'E' as Grade }, { name: 'Certificate in Fashion', grade: 'D' as Grade }
+    { name: 'Plumbing', grade: 'D' as Grade }, { name: 'Electrical Installation', grade: 'D' as Grade },
+    { name: 'Welding', grade: 'E' as Grade }, { name: 'Masonry', grade: 'E' as Grade },
+    { name: 'Catering', grade: 'D' as Grade }, { name: 'Carpentry', grade: 'E' as Grade },
+    { name: 'Beauty Therapy', grade: 'D-' as Grade }, { name: 'Information Technology', grade: 'D' as Grade },
+    { name: 'Motor Vehicle Mechanics', grade: 'E' as Grade }, { name: 'Fashion Design', grade: 'D' as Grade }
   ]
 };
 
@@ -147,6 +147,9 @@ const generateFullDataset = (): Course[] => {
   // Map Degrees to ALL 67 Universities
   UNIVERSITIES.forEach(uni => {
     TEMPLATES.DEGREE.forEach(t => {
+      // create a rough cluster point requirement based on the minimum grade
+      const basePoints = GradeToPoints[t.grade] * 3; // KUCCPS uses best 3 subjects
+      const variance = Math.floor(Math.random() * 4); // add 0–3 points of randomness
       courses.push({
         id: `deg-${idCounter++}`,
         name: `Bachelor of ${t.name}`,
@@ -155,6 +158,7 @@ const generateFullDataset = (): Course[] => {
         duration: '4-6 Years',
         minGrade: t.grade,
         clusterSubjects: ['Math', 'Eng', 'Sci'],
+        clusterPoints: Math.min(basePoints + variance, 36),
         kuccpsLink: 'https://students.kuccps.net/'
       });
     });
@@ -164,6 +168,8 @@ const generateFullDataset = (): Course[] => {
   const allColleges = [...KMTC_CAMPUSES.map(c => `KMTC ${c}`), ...NATIONAL_POLYTECHNICS];
   allColleges.forEach(inst => {
     TEMPLATES.DIPLOMA.forEach(t => {
+      const basePoints = GradeToPoints[t.grade] * 2; // shorter programmes, fewer subjects
+      const variance = Math.floor(Math.random() * 3);
       courses.push({
         id: `dip-${idCounter++}`,
         name: `Diploma in ${t.name}`,
@@ -172,6 +178,7 @@ const generateFullDataset = (): Course[] => {
         duration: '2-3 Years',
         minGrade: t.grade,
         clusterSubjects: ['Relevant Science', 'Eng'],
+        clusterPoints: Math.min(basePoints + variance, 24),
         kuccpsLink: 'https://students.kuccps.net/'
       });
     });
@@ -181,14 +188,18 @@ const generateFullDataset = (): Course[] => {
   NATIONAL_POLYTECHNICS.forEach(inst => {
     // Fixed typo in property access from CERT_ARTisAN to CERT_ARTISAN
     TEMPLATES.CERT_ARTISAN.forEach(t => {
+      const basePoints = GradeToPoints[t.grade];
+      const isArtisan = ['Welding', 'Masonry', 'Carpentry', 'Motor Vehicle Mechanics'].includes(t.name);
+      const prefix = isArtisan ? 'Artisan in' : 'Certificate in';
       courses.push({
         id: `cert-${idCounter++}`,
-        name: t.name,
+        name: `${prefix} ${t.name}`,
         institution: inst,
-        type: t.name.includes('Artisan') ? 'TVET' : 'College',
+        type: 'TVET',
         duration: '1-2 Years',
         minGrade: t.grade,
         clusterSubjects: ['Practical Skills'],
+        clusterPoints: Math.min(basePoints + 5, 12), // simple low requirement
         kuccpsLink: 'https://students.kuccps.net/'
       });
     });

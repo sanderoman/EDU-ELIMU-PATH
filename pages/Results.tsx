@@ -11,7 +11,7 @@ import {
   Calculator
 } from 'lucide-react';
 import { fetchCourses } from '../constants';
-import { getEligibleCourses, getMeanGradeDetails } from '../utils/logic';
+import { getEligibleCourses, getMeanGradeDetails, calculateClusterPoints } from '../utils/logic';
 import { GradeToPoints, Grade } from '../types';
 type GroundedResponse = { text: string; sources: { title: string; uri: string }[] };
 
@@ -57,6 +57,7 @@ const Results: React.FC = () => {
   const [careerAdvice, setCareerAdvice] = useState<string>('');
   const [isLoadingAdvice, setIsLoadingAdvice] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAllCourses, setShowAllCourses] = useState(false); // fairness toggle
   
   const [marketableCourses, setMarketableCourses] = useState<MarketableCourse[]>([]);
   const [isLoadingMarketable, setIsLoadingMarketable] = useState(false);
@@ -118,7 +119,20 @@ const Results: React.FC = () => {
   
   const gradeDetails = getMeanGradeDetails(selectedSubjects);
   
-  const eligibleCourses = useMemo(() => getEligibleCourses(meanGrade, allCourses), [meanGrade, allCourses]);
+  // Calculate display cluster score (sum of best 4 subjects for UI)
+  const displayClusterScore = selectedSubjects
+    .sort((a: any, b: any) => b.points - a.points)
+    .slice(0, 4)
+    .reduce((sum: number, g: any) => sum + g.points, 0);
+  
+  const eligibleCourses = useMemo(() => {
+    if (showAllCourses) {
+      // when toggle is OFF, show ALL courses without filters
+      return allCourses;
+    }
+    // when toggle is ON, apply eligibility filters
+    return getEligibleCourses(meanGrade, selectedSubjects || [], allCourses);
+  }, [meanGrade, selectedSubjects, allCourses, showAllCourses]);
   
   const filteredCourses = useMemo(() => {
     return eligibleCourses.filter((course: any) => 
@@ -200,8 +214,11 @@ const Results: React.FC = () => {
   const unlockReport = () => {
     setPaymentStep('unlocked');
     setShowPaymentModal(false);
-    fetchAdvice();
-    fetchMarketableSummary();
+    // Trigger the fetches with a slight delay to ensure state is updated
+    setTimeout(() => {
+      fetchAdvice();
+      fetchMarketableSummary();
+    }, 100);
   };
 
   const handleExploreCourse = async (courseName: string, institution: string) => {
@@ -238,19 +255,42 @@ const Results: React.FC = () => {
 
   const fetchAdvice = async () => {
     setIsLoadingAdvice(true);
-    const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
-    const advRes = await postJson('/api/gemini/advice', { meanGrade, topSubjects: top3 });
-    setCareerAdvice(advRes.text || '');
-    setIsLoadingAdvice(false);
+    try {
+      const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
+      // Calculate a general cluster score for API (sum of best 4 subjects)
+      const clusterScore = selectedSubjects
+        .sort((a: any, b: any) => b.points - a.points)
+        .slice(0, 4)
+        .reduce((sum: number, g: any) => sum + g.points, 0);
+      const advRes = await postJson('/api/gemini/advice', { meanGrade, clusterScore, topSubjects: top3 });
+      setCareerAdvice(advRes.text || '');
+    } catch (err) {
+      console.error('fetchAdvice error', err);
+      setCareerAdvice('Unable to generate career strategy at this moment. Please try again later.');
+    } finally {
+      setIsLoadingAdvice(false);
+    }
   };
 
   const fetchMarketableSummary = async () => {
     setIsLoadingMarketable(true);
-    const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
-    const namesOnly = eligibleCourses.slice(0, 80).map(c => `${c.name} at ${c.institution}`);
-    const results = await postJson('/api/gemini/marketable', { meanGrade, topSubjects: top3, courseList: namesOnly });
-    setMarketableCourses(results);
-    setIsLoadingMarketable(false);
+    try {
+      const top3 = selectedSubjects.sort((a: any, b: any) => b.points - a.points).slice(0, 3).map((s: any) => s.name);
+      // Calculate a general cluster score for API
+      const clusterScore = selectedSubjects
+        .sort((a: any, b: any) => b.points - a.points)
+        .slice(0, 4)
+        .reduce((sum: number, g: any) => sum + g.points, 0);
+      // send ALL available courses for AI to analyze
+      const namesOnly = allCourses.map(c => `${c.name} at ${c.institution}`);
+      const results = await postJson('/api/gemini/marketable', { meanGrade, clusterScore, topSubjects: top3, courseList: namesOnly });
+      setMarketableCourses(results);
+    } catch (err) {
+      console.error('fetchMarketableSummary error', err);
+      setMarketableCourses([]); // clear previous results
+    } finally {
+      setIsLoadingMarketable(false);
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -383,6 +423,12 @@ const Results: React.FC = () => {
                   </div>
                   <div className="h-10 md:h-16 w-px bg-white/10 hidden md:block"></div>
                   <div className="space-y-1">
+                    <div className="text-gray-500 text-[9px] md:text-[11px] font-black uppercase tracking-[0.4em]">Cluster Score</div>
+                    <div className="text-4xl md:text-6xl font-black text-white">{displayClusterScore}</div>
+                    <div className="text-xs text-gray-400 mt-1">(best 4 subjects total)</div>
+                  </div>
+                  <div className="h-10 md:h-16 w-px bg-white/10 hidden md:block"></div>
+                  <div className="space-y-1">
                     <div className="text-gray-500 text-[9px] md:text-[11px] font-black uppercase tracking-[0.4em]">Eligible Programs</div>
                     <div className="text-4xl md:text-6xl font-black text-white">{eligibleCourses.length}</div>
                   </div>
@@ -429,6 +475,10 @@ const Results: React.FC = () => {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-400">Mean Grade:</span>
                     <span className="text-lg font-black text-green-500">{gradeDetails.meanGrade}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-400">Cluster Score (best 4 subjects):</span>
+                    <span className="text-lg font-black text-white">{displayClusterScore}</span>
                   </div>
                 </div>
                 
@@ -509,9 +559,19 @@ const Results: React.FC = () => {
                         <Loader2 size={24} md:size={32} className="animate-spin text-red-600" /> 
                         <span className="text-lg md:text-2xl uppercase tracking-widest">Constructing Advisory...</span>
                      </div>
-                  ) : (
+                  ) : careerAdvice ? (
                      <div className="prose prose-sm md:prose-xl prose-invert prose-red max-w-none text-gray-300 text-base md:text-xl leading-relaxed whitespace-pre-wrap font-medium">
                         {careerAdvice}
+                     </div>
+                  ) : (
+                     <div className="text-center text-gray-400">
+                        <p className="mb-4">No career strategy was generated.</p>
+                        <button
+                          onClick={fetchAdvice}
+                          className="px-6 py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all"
+                        >
+                          Retry
+                        </button>
                      </div>
                   )}
                </section>
@@ -522,7 +582,7 @@ const Results: React.FC = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                      {isLoadingMarketable ? (
                        [1, 2, 3, 4].map(i => <div key={i} className="bg-white/5 h-64 md:h-80 rounded-3xl md:rounded-[3rem] animate-pulse"></div>)
-                     ) : (
+                     ) : marketableCourses.length > 0 ? (
                        marketableCourses.map((m, i) => (
                          <div key={i} className="group p-8 md:p-12 rounded-3xl md:rounded-[4rem] bg-white/[0.02] border border-white/5 hover:border-red-600/40 transition-all flex flex-col justify-between h-full shadow-lg">
                             <div className="space-y-4 md:space-y-6">
@@ -538,6 +598,16 @@ const Results: React.FC = () => {
                             </button>
                          </div>
                        ))
+                     ) : (
+                       <div className="col-span-full text-center text-gray-400">
+                         <p className="mb-4">Market matrix could not be generated.</p>
+                         <button
+                           onClick={fetchMarketableSummary}
+                           className="px-6 py-3 bg-red-600 text-white rounded-xl font-black uppercase tracking-widest hover:bg-red-700 transition-all"
+                         >
+                           Retry
+                         </button>
+                       </div>
                      )}
                   </div>
                </section>
@@ -556,8 +626,23 @@ const Results: React.FC = () => {
                           onChange={(e) => setSearchTerm(e.target.value)}
                         />
                      </div>
+                     <div className="flex items-center gap-2 mt-2">
+                        <input
+                          type="checkbox"
+                          id="showAll"
+                          checked={showAllCourses}
+                          onChange={() => setShowAllCourses(prev => !prev)}
+                          className="accent-red-600"
+                        />
+                        <label htmlFor="showAll" className="text-sm text-gray-300 select-none">
+                          Filter by eligibility (hide ineligible options)
+                        </label>
+                     </div>
                   </div>
                   <div className="bg-gray-900/30 border border-white/5 rounded-2xl md:rounded-[5rem] overflow-hidden shadow-2xl">
+                     <div className="p-4 bg-yellow-600/5 border-b border-yellow-600/20 text-[8px] md:text-[9px] font-black text-yellow-400 uppercase tracking-widest text-center">
+                       ℹ️ Official KUCCPS cut-offs & subject requirements applied. Last updated: 2025/2026 cycle
+                     </div>
                      <div className="overflow-x-auto scrollbar-hide">
                         <table className="w-full text-left min-w-[600px]">
                            <thead>
@@ -570,9 +655,12 @@ const Results: React.FC = () => {
                            </thead>
                            <tbody className="divide-y divide-white/5">
                               {filteredCourses.slice(0, 100).map((c) => (
-                                 <tr key={c.id} className="hover:bg-white/[0.04] transition-all group">
+                                 <tr key={c.id} className={`hover:bg-white/[0.04] transition-all group ${c.cutoffPoints ? 'border-l-4 border-l-green-600' : 'border-l-4 border-l-gray-700'}`}>
                                     <td className="p-6 md:p-12">
-                                       <div className="text-lg md:text-2xl font-black tracking-tighter text-white uppercase leading-none mb-2">{c.name}</div>
+                                       <div className="text-lg md:text-2xl font-black tracking-tighter text-white uppercase leading-none mb-2 flex items-center gap-2">
+                                         {c.name}
+                                         {c.cutoffPoints && <span className="text-[8px] bg-green-600 text-white px-2 py-1 rounded font-black">OFFICIAL</span>}
+                                       </div>
                                        <span className="text-[8px] md:text-[10px] font-black text-gray-600 uppercase tracking-widest">VERIFIED 2025</span>
                                     </td>
                                     <td className="p-6 md:p-12 text-gray-400 font-bold uppercase text-[10px] md:text-sm tracking-widest max-w-[200px] truncate">{c.institution}</td>

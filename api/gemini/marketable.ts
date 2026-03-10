@@ -3,11 +3,11 @@ import { callModel } from '../_lib/genai';
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  const { meanGrade, topSubjects, courseList } = req.body || {};
+  const { meanGrade, topSubjects, courseList, clusterScore } = req.body || {};
   if (!meanGrade || !Array.isArray(topSubjects) || !Array.isArray(courseList)) return res.status(400).json({ error: 'Invalid payload' });
 
   try {
-    const prompt = `Analyze the following courses for a student with Mean Grade ${meanGrade} and top subjects ${topSubjects.join(', ')}. \nOut of these options: ${courseList.slice(0, 50).join(', ')}...\n\nTASK:\nSelect the TOP 20 most MARKETABLE and RECOMMENDED courses for this specific student.\nConsider the 2025-2030 Kenyan Job Market (Health, ICT, Agriculture, Blue Economy, Infrastructure).\n\nReturn a JSON array of 20 objects:\n[{"course": "Course Name", "institution": "Institution", "marketability": "90-99%", "reason": "Short growth-focused reason"}]`;
+    const prompt = `Analyze the following courses for a student with Mean Grade ${meanGrade}, cluster score ${clusterScore || 0} (calculated using official KUCCPS methodology - sum of best 3 subjects), and top subjects ${topSubjects.join(', ')}. \nOut of these options: ${courseList.slice(0, 50).join(', ')}...\n\nTASK:\nSelect the TOP 20 most MARKETABLE and RECOMMENDED courses for this specific student.\nConsider the 2025-2030 Kenyan Job Market (Health, ICT, Agriculture, Blue Economy, Infrastructure).\n\nReturn a JSON array of 20 objects:\n[{"course": "Course Name", "institution": "Institution", "marketability": "90-99%", "reason": "Short growth-focused reason"}]`;
 
     const response = await callModel(prompt, { config: {
       responseMimeType: 'application/json',

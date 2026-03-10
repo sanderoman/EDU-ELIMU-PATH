@@ -1,4 +1,5 @@
-import { Course } from './types';
+import { Course, GradeToPoints, CutoffInfo } from './types';
+import { KUCCPS_CUTOFFS } from './kuccps-cutoffs';
 
 // KUCCPS OFFICIAL CLUSTERS AND PROGRAMMES
 export const KUCCPS_CLUSTERS = {
@@ -798,18 +799,63 @@ export const generateKUCCPSCourses = (): Course[] => {
     "KMTC Uasin Gishu", "KMTC Trans Nzoia", "KMTC West Pokot", "KMTC Elgeyo Marakwet", "KMTC Baringo"
   ];
 
+  // Define cluster subjects for each cluster
+  const clusterDefinitions = {
+    CLUSTER_1_LAW: {
+      subjects: ['English', 'Kiswahili', 'History & Government', 'Geography'],
+      required: ['English', 'History & Government'],
+      cutoffRange: [39.5, 44.0] // Law cluster cutoffs
+    },
+    CLUSTER_2_BUSINESS: {
+      subjects: ['Mathematics', 'English', 'Business Studies', 'Geography'],
+      required: ['Mathematics', 'English'],
+      cutoffRange: [35.0, 42.0]
+    },
+    CLUSTER_3_SOCIAL: {
+      subjects: ['English', 'Kiswahili', 'History & Government', 'Geography', 'CRE', 'French'],
+      required: ['English'],
+      cutoffRange: [32.0, 40.0]
+    },
+    CLUSTER_4_SCIENCES: {
+      subjects: ['Mathematics', 'English', 'Biology', 'Chemistry', 'Physics', 'Geography'],
+      required: ['Mathematics', 'English'],
+      cutoffRange: [36.0, 45.0]
+    },
+    CLUSTER_5_ENGINEERING: {
+      subjects: ['Mathematics', 'English', 'Physics', 'Chemistry', 'Biology', 'Geography'],
+      required: ['Mathematics', 'Physics', 'Chemistry'],
+      cutoffRange: [38.0, 46.0]
+    }
+  };
+
   // Generate Degree Programmes (C+ and above)
-  Object.values(KUCCPS_CLUSTERS).forEach(cluster => {
+  Object.entries(KUCCPS_CLUSTERS).forEach(([clusterKey, cluster]) => {
+    const clusterDef = clusterDefinitions[clusterKey as keyof typeof clusterDefinitions] || {
+      subjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics'],
+      required: ['English', 'Mathematics'],
+      cutoffRange: [35.0, 42.0]
+    };
+
     cluster.programmes.forEach(programme => {
       institutions.slice(0, 10).forEach((institution, index) => {
         const minGrade = index < 3 ? 'A' : index < 6 ? 'B+' : index < 8 ? 'B' : 'C+';
+        // Generate realistic cut-off points based on cluster
+        const baseCutoff = clusterDef.cutoffRange[0] + (index * 0.5);
+        const cutoffPoints = Math.min(baseCutoff + Math.random() * 2, clusterDef.cutoffRange[1]);
+
+        const key = `${programme}|${institution}`;
+        const cutoff: CutoffInfo | undefined = (KUCCPS_CUTOFFS[key] || KUCCPS_CUTOFFS['default']);
+        const finalMinGrade = cutoff.minGradeRequirement || minGrade;
+
         courses.push({
           id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
           name: programme,
           institution,
           type: 'University',
-          minGrade,
-          clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+          minGrade: finalMinGrade,
+          clusterSubjects: clusterDef.subjects,
+          cutoffPoints: cutoff.clusterPoints || cutoffPoints,
+          requiredSubjects: cutoff.requiredSubjects || clusterDef.required,
           duration: '4 Years',
           description: `Official KUCCPS degree programme in ${cluster.name}`,
           kuccpsLink: 'https://students.kuccps.net/programmes/'
@@ -835,15 +881,30 @@ export const generateKUCCPSCourses = (): Course[] => {
   ];
 
   diplomaProgrammes.forEach(programme => {
-    institutions.slice(0, 15).forEach((institution, index) => {
+    collegeInstitutions.slice(0, 15).forEach((institution, index) => {
       const minGrade = index < 5 ? 'C' : 'C-';
+      const key = `${programme}|${institution}`;
+      const cutoff: CutoffInfo | undefined = (KUCCPS_CUTOFFS[key] || KUCCPS_CUTOFFS['default']);
+      const finalMinGrade = cutoff.minGradeRequirement || minGrade;
+
+      // Define required subjects based on programme type
+      let requiredSubjects: string[] = [];
+      if (programme.includes('Nursing') || programme.includes('Clinical Medicine') || programme.includes('Medical')) {
+        requiredSubjects = ['Biology', 'Chemistry', 'English'];
+      } else if (programme.includes('Engineering') || programme.includes('Technology')) {
+        requiredSubjects = ['Mathematics', 'Physics', 'English'];
+      } else if (programme.includes('Business') || programme.includes('Management') || programme.includes('Accounting')) {
+        requiredSubjects = ['Mathematics', 'English'];
+      }
+
       courses.push({
         id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
         name: programme,
         institution,
         type: 'College',
-        minGrade,
-        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        minGrade: finalMinGrade,
+        clusterSubjects: [], // No cluster competition for diplomas
+        requiredSubjects: cutoff.requiredSubjects || requiredSubjects,
         duration: '3 Years',
         description: `KUCCPS diploma programme in ${programme.replace('Diploma in ', '')}`,
         kuccpsLink: 'https://students.kuccps.net/programmes/'
@@ -870,13 +931,18 @@ export const generateKUCCPSCourses = (): Course[] => {
   certificateProgrammes.forEach(programme => {
     tvetInstitutions.forEach((institution, index) => {
       const minGrade = 'D+';
+      const key = `${programme}|${institution}`;
+      const cutoff: CutoffInfo | undefined = (KUCCPS_CUTOFFS[key] || KUCCPS_CUTOFFS['default']);
+      const finalMinGrade = cutoff.minGradeRequirement || minGrade;
+
       courses.push({
         id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
         name: programme,
         institution,
         type: 'TVET',
-        minGrade,
-        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        minGrade: finalMinGrade,
+        clusterSubjects: [], // No cluster competition for certificates
+        requiredSubjects: cutoff.requiredSubjects,
         duration: '2 Years',
         description: `KUCCPS certificate programme in ${programme.replace('Certificate in ', '')}`,
         kuccpsLink: 'https://students.kuccps.net/programmes/'
@@ -884,7 +950,7 @@ export const generateKUCCPSCourses = (): Course[] => {
     });
   });
 
-  // Generate Artisan Courses (D+)
+  // Generate Artisan Courses (D)
   const artisanProgrammes = [
     "Artisan in Electrical Installation", "Artisan in Plumbing", "Artisan in Welding",
     "Artisan in Carpentry", "Artisan in Masonry", "Artisan in Painting", "Artisan in Tiling",
@@ -898,14 +964,14 @@ export const generateKUCCPSCourses = (): Course[] => {
 
   artisanProgrammes.forEach(programme => {
     tvetInstitutions.slice(0, 15).forEach((institution, index) => {
-      const minGrade = 'D+';
+      const minGrade = 'D';
       courses.push({
         id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
         name: programme,
         institution,
         type: 'TTC',
         minGrade,
-        clusterSubjects: ['English', 'Mathematics', 'Biology', 'Chemistry', 'Physics', 'Geography', 'History', 'CRE', 'Agriculture', 'Business Studies'],
+        clusterSubjects: [], // No cluster competition for artisans
         duration: '1 Year',
         description: `KUCCPS artisan programme in ${programme.replace('Artisan in ', '')}`,
         kuccpsLink: 'https://students.kuccps.net/programmes/'
