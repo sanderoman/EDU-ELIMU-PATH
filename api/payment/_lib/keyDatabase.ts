@@ -48,17 +48,23 @@ let keyDatabase: KeyRecord[] = [
 export const keyDB = {
   // Get all keys
   getAllKeys: (): KeyRecord[] => {
+    console.log(`[DB] getAllKeys: returning ${keyDatabase.length} keys`);
     return [...keyDatabase];
   },
 
-  // Get key by code
+  // Get key by code (normalized)
   getKeyByCode: (code: string): KeyRecord | null => {
-    return keyDatabase.find(k => k.code.toUpperCase() === code.toUpperCase()) || null;
+    const normalizedCode = code?.toUpperCase().trim().replace(/-/g, '') || '';
+    const key = keyDatabase.find(k => k.code.toUpperCase().replace(/-/g, '') === normalizedCode) || null;
+    console.log(`[DB] getKeyByCode: ${code} -> ${normalizedCode}, found: ${!!key}`);
+    return key;
   },
 
   // Get key by ID
   getKeyById: (id: string): KeyRecord | null => {
-    return keyDatabase.find(k => k.id === id) || null;
+    const key = keyDatabase.find(k => k.id === id) || null;
+    console.log(`[DB] getKeyById: ${id}, found: ${!!key}`);
+    return key;
   },
 
   // Create new key
@@ -72,20 +78,26 @@ export const keyDB = {
     };
 
     keyDatabase.push(newKey);
+    console.log(`[DB] createKey: created ${newKey.id} with code ${newKey.code}`);
     return newKey;
   },
 
   // Update key
   updateKey: (id: string, updates: Partial<KeyRecord>): KeyRecord | null => {
     const keyIndex = keyDatabase.findIndex(k => k.id === id);
-    if (keyIndex === -1) return null;
+    if (keyIndex === -1) {
+      console.error(`[DB] updateKey: key ${id} not found`);
+      return null;
+    }
 
     keyDatabase[keyIndex] = { ...keyDatabase[keyIndex], ...updates };
+    console.log(`[DB] updateKey: updated ${id} with`, updates);
     return keyDatabase[keyIndex];
   },
 
   // Activate key
   activateKey: (id: string, activatedBy: string): KeyRecord | null => {
+    console.log(`[DB] activateKey: activating ${id} by ${activatedBy}`);
     return keyDB.updateKey(id, {
       status: 'active',
       activatedAt: new Date().toISOString(),
@@ -95,6 +107,7 @@ export const keyDB = {
 
   // Deactivate key
   deactivateKey: (id: string): KeyRecord | null => {
+    console.log(`[DB] deactivateKey: deactivating ${id}`);
     return keyDB.updateKey(id, {
       status: 'inactive'
     });
@@ -103,12 +116,16 @@ export const keyDB = {
   // Record key usage
   recordUsage: (code: string, phone: string): KeyRecord | null => {
     const key = keyDB.getKeyByCode(code);
-    if (!key) return null;
+    if (!key) {
+      console.error(`[DB] recordUsage: key ${code} not found`);
+      return null;
+    }
 
     const linkedPhones = key.linkedPhones.includes(phone)
       ? key.linkedPhones
       : [...key.linkedPhones, phone];
 
+    console.log(`[DB] recordUsage: recording usage for ${code} by ${phone}`);
     return keyDB.updateKey(key.id, {
       lastValidatedAt: new Date().toISOString(),
       usageCount: key.usageCount + 1,

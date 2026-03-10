@@ -29,7 +29,7 @@ import { Course, PaymentRecord, MasterKey } from '../types';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
-type VerifStage = 'IDLE' | 'ANALYZING_SMS' | 'DB_CROSS_CHECK' | 'SYNCING_LEDGER' | 'FETCHING_OTP' | 'VALIDATING_OTP' | 'FAILED' | 'SUCCESS' | 'FRAUD_DETECTED';
+type VerifStage = 'IDLE' | 'ANALYZING_SMS' | 'DB_CROSS_CHECK' | 'SYNCING_LEDGER' | 'FETCHING_OTP' | 'VALIDATING_OTP' | 'VERIFYING' | 'FAILED' | 'SUCCESS' | 'FRAUD_DETECTED';
 
 interface MarketableCourse {
   course: string;
@@ -50,6 +50,7 @@ const Results: React.FC = () => {
   const [manualOtp, setManualOtp] = useState('');
   const [isUsingOtp, setIsUsingOtp] = useState(false);
   const [accessCode, setAccessCode] = useState('');
+  const [studentPhone, setStudentPhone] = useState('');
   const [verifStage, setVerifStage] = useState<VerifStage>('IDLE');
   const [errorMsg, setErrorMsg] = useState('');
   const [isExporting, setIsExporting] = useState(false);
@@ -185,29 +186,43 @@ const Results: React.FC = () => {
     }
   };
 
-  const handleAccessCodeVerify = () => {
+  const handleAccessCodeVerify = async () => {
     triggerHaptic();
     if (!accessCode.trim()) return;
-    
-    const approvalCodes = JSON.parse(localStorage.getItem('edupath_approval_codes') || '[]');
-    const foundCode = approvalCodes.find((code: any) => 
-      code.code === accessCode.toUpperCase() && !code.used
-    );
-    
-    if (foundCode) {
-      // Mark code as used
-      const updatedCodes = approvalCodes.map((code: any) => 
-        code.code === accessCode.toUpperCase() 
-          ? { ...code, used: true, usedAt: new Date().toISOString() }
-          : code
-      );
-      localStorage.setItem('edupath_approval_codes', JSON.stringify(updatedCodes));
-      
-      setVerifStage('SUCCESS');
-      setTimeout(() => unlockReport(), 800);
-    } else {
+
+    setVerifStage('VERIFYING');
+
+    try {
+      console.log(`[CLIENT] Validating access code: ${accessCode}`);
+
+      const response = await fetch('/validate-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          access_key: accessCode.trim(),
+          phone: studentPhone || 'unknown',
+          studentName: studentName || 'Unknown Student'
+        })
+      });
+
+      const result = await response.json();
+      console.log(`[CLIENT] Validation response:`, result);
+
+      if (result.valid) {
+        console.log(`[CLIENT] Access granted for code: ${accessCode}`);
+        setVerifStage('SUCCESS');
+        setTimeout(() => unlockReport(), 800);
+      } else {
+        console.log(`[CLIENT] Access denied: ${result.reason}`);
+        setVerifStage('FAILED');
+        setErrorMsg(result.message || "INVALID ACCESS CODE. CONTACT ADMIN FOR ASSISTANCE.");
+      }
+    } catch (error) {
+      console.error(`[CLIENT] Validation error:`, error);
       setVerifStage('FAILED');
-      setErrorMsg("INVALID ACCESS CODE. CONTACT ADMIN FOR ASSISTANCE.");
+      setErrorMsg("NETWORK ERROR. PLEASE TRY AGAIN.");
     }
   };
 

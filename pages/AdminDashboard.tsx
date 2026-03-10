@@ -142,27 +142,55 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const generateAccessCode = () => {
+  const generateAccessCode = async () => {
     if (!studentName.trim() || !studentPhone.trim()) {
       alert('Student name and phone required');
       return;
     }
-    
-    const code = 'EDU' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    setAccessCode(code);
-    
-    // Store the access code
-    const approvalCodes = JSON.parse(localStorage.getItem('edupath_approval_codes') || '[]');
-    approvalCodes.push({
-      code,
-      studentName,
-      studentPhone,
-      createdAt: new Date().toISOString(),
-      used: false
-    });
-    localStorage.setItem('edupath_approval_codes', JSON.stringify(approvalCodes));
-    
-    alert(`Access Code Generated: ${code}\nShare this with ${studentName}`);
+
+    try {
+      const response = await fetch('/api/payment/admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': 'admin-secret-key'
+        },
+        body: JSON.stringify({
+          action: 'createKey',
+          label: `Access for ${studentName}`,
+          expiryHours: 24 // 24 hours for student access
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAccessCode(data.key.code);
+
+        // Now activate the key immediately
+        const activateResponse = await fetch('/api/payment/admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': 'admin-secret-key'
+          },
+          body: JSON.stringify({
+            action: 'activateKey',
+            keyId: data.key.id
+          })
+        });
+
+        if (activateResponse.ok) {
+          alert(`Access Code Generated: ${data.key.code}\nShare this with ${studentName}\n\nKey ID: ${data.key.id}`);
+        } else {
+          alert('Key created but activation failed. Please activate manually in the Keys section.');
+        }
+      } else {
+        alert('Failed to generate access code');
+      }
+    } catch (error) {
+      console.error('Failed to generate access code:', error);
+      alert('Failed to generate access code');
+    }
   };
 
   const clearLogs = () => {
@@ -285,22 +313,25 @@ const AdminDashboard: React.FC = () => {
             </div>
             
             <div className="bg-gray-900 border border-white/5 p-12 rounded-[3.5rem] shadow-2xl">
-              <h3 className="text-xl font-black uppercase text-white mb-6">Recent Approval Codes</h3>
+              <h3 className="text-xl font-black uppercase text-white mb-6">Recent Access Keys</h3>
               <div className="space-y-4">
-                {JSON.parse(localStorage.getItem('edupath_approval_codes') || '[]').slice(0, 5).map((code: any, i: number) => (
-                  <div key={i} className="flex justify-between items-center p-4 bg-black/50 rounded-xl">
+                {masterKeys.slice(0, 5).map((key) => (
+                  <div key={key.id} className="flex justify-between items-center p-4 bg-black/50 rounded-xl">
                     <div>
-                      <div className="font-black text-white">{code.studentName}</div>
-                      <div className="text-sm text-gray-400">{code.studentPhone} • {new Date(code.createdAt).toLocaleString()}</div>
+                      <div className="font-black text-white">{key.label}</div>
+                      <div className="text-sm text-gray-400">{key.usageCount} uses • {new Date(key.createdAt).toLocaleString()}</div>
                     </div>
                     <div className="text-right">
-                      <div className="font-black text-red-600">{code.code}</div>
-                      <div className={`text-xs ${code.used ? 'text-gray-500' : 'text-green-500'}`}>
-                        {code.used ? 'Used' : 'Active'}
+                      <div className="font-black text-red-600">{key.code}</div>
+                      <div className={`text-xs ${key.status === 'active' ? 'text-green-500' : key.status === 'inactive' ? 'text-yellow-500' : 'text-gray-500'}`}>
+                        {key.status}
                       </div>
                     </div>
                   </div>
                 ))}
+                {masterKeys.length === 0 && (
+                  <div className="text-center text-gray-500 py-8">No access keys generated yet</div>
+                )}
               </div>
             </div>
           </div>

@@ -106,14 +106,16 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ error: 'Key label is required' });
       }
 
-      // Generate unique code
+      // Generate unique code (EDU prefix + random)
       const code = `EDU${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
-      // Calculate expiry if specified
+      // Calculate expiry if specified (use UTC)
       let expiresAt: string | undefined;
       if (expiryHours && typeof expiryHours === 'number') {
         expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
       }
+
+      console.log(`[ADMIN] Creating key: ${code}, label: ${label}, expires: ${expiresAt}`);
 
       // Create key in database
       const newKey = keyDB.createKey({
@@ -124,6 +126,24 @@ export default async function handler(req: any, res: any) {
         expiresAt
       });
 
+      console.log(`[ADMIN] Key created in database:`, {
+        id: newKey.id,
+        code: newKey.code,
+        status: newKey.status
+      });
+
+      // INSTANT VERIFICATION: Test the key immediately after creation
+      const verificationResult = keyDB.getKeyByCode(code);
+      if (!verificationResult) {
+        console.error(`[ADMIN] CRITICAL: Key ${code} not found after creation!`);
+        return res.status(500).json({
+          error: 'Key creation verification failed',
+          message: 'Key was not properly saved to database'
+        });
+      }
+
+      console.log(`[ADMIN] Key verification successful: ${code}`);
+
       return res.status(200).json({
         success: true,
         message: 'Key created successfully',
@@ -133,7 +153,8 @@ export default async function handler(req: any, res: any) {
           status: newKey.status,
           label: newKey.label,
           createdAt: newKey.createdAt,
-          expiresAt: newKey.expiresAt
+          expiresAt: newKey.expiresAt,
+          verified: true // Confirm database commit
         }
       });
     }
@@ -146,11 +167,33 @@ export default async function handler(req: any, res: any) {
         return res.status(400).json({ error: 'Key ID is required' });
       }
 
+      console.log(`[ADMIN] Activating key: ${keyId}`);
+
       const activatedKey = keyDB.activateKey(keyId, 'admin');
 
       if (!activatedKey) {
+        console.error(`[ADMIN] Key activation failed: ${keyId} not found`);
         return res.status(404).json({ error: 'Key not found' });
       }
+
+      console.log(`[ADMIN] Key activated:`, {
+        id: activatedKey.id,
+        code: activatedKey.code,
+        status: activatedKey.status,
+        activatedAt: activatedKey.activatedAt
+      });
+
+      // INSTANT VERIFICATION: Test activation immediately
+      const verificationResult = keyDB.getKeyById(keyId);
+      if (!verificationResult || verificationResult.status !== 'active') {
+        console.error(`[ADMIN] CRITICAL: Key ${keyId} activation verification failed!`);
+        return res.status(500).json({
+          error: 'Key activation verification failed',
+          message: 'Key status was not properly updated'
+        });
+      }
+
+      console.log(`[ADMIN] Key activation verified: ${keyId}`);
 
       return res.status(200).json({
         success: true,
@@ -159,7 +202,8 @@ export default async function handler(req: any, res: any) {
           id: activatedKey.id,
           code: activatedKey.code,
           status: activatedKey.status,
-          activatedAt: activatedKey.activatedAt
+          activatedAt: activatedKey.activatedAt,
+          verified: true // Confirm database commit
         }
       });
     }
