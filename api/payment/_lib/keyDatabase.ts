@@ -41,6 +41,17 @@ let keyDatabase: KeyRecord[] = [
     createdBy: 'system',
     usageCount: 0,
     linkedPhones: []
+  },
+  {
+    id: 'passkey-2025',
+    code: '2025',
+    label: 'Year 2025 Passkey',
+    createdAt: '2025-01-01T00:00:00.000Z',
+    activatedAt: '2025-01-01T00:00:00.000Z',
+    status: 'active',
+    createdBy: 'system',
+    usageCount: 0,
+    linkedPhones: []
   }
 ];
 
