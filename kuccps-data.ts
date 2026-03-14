@@ -837,7 +837,7 @@ export const generateKUCCPSCourses = (): Course[] => {
     };
 
     cluster.programmes.forEach(programme => {
-      institutions.slice(0, 10).forEach((institution, index) => {
+      institutions.forEach((institution, index) => {
         const minGrade = index < 3 ? 'A' : index < 6 ? 'B+' : index < 8 ? 'B' : 'C+';
         // Generate realistic cut-off points based on cluster
         const baseCutoff = clusterDef.cutoffRange[0] + (index * 0.5);
@@ -881,7 +881,7 @@ export const generateKUCCPSCourses = (): Course[] => {
   ];
 
   diplomaProgrammes.forEach(programme => {
-    collegeInstitutions.slice(0, 15).forEach((institution, index) => {
+    collegeInstitutions.forEach((institution, index) => {
       const minGrade = index < 5 ? 'C' : 'C-';
       const key = `${programme}|${institution}`;
       const cutoff: CutoffInfo | undefined = (KUCCPS_CUTOFFS[key] || KUCCPS_CUTOFFS['default']);
@@ -963,7 +963,7 @@ export const generateKUCCPSCourses = (): Course[] => {
   ];
 
   artisanProgrammes.forEach(programme => {
-    tvetInstitutions.slice(0, 15).forEach((institution, index) => {
+    tvetInstitutions.forEach((institution, index) => {
       const minGrade = 'D';
       courses.push({
         id: `${programme.replace(/\s+/g, '-').toLowerCase()}-${institution.replace(/\s+/g, '-').toLowerCase()}`,
@@ -979,7 +979,7 @@ export const generateKUCCPSCourses = (): Course[] => {
     });
   });
 
-  return courses.slice(0, 200);
+  return courses;
 };
 
 export default KUCCPS_CLUSTERS;

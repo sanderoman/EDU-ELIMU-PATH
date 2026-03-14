@@ -669,7 +669,7 @@ const Results: React.FC = () => {
                               </tr>
                            </thead>
                            <tbody className="divide-y divide-white/5">
-                              {filteredCourses.slice(0, 100).map((c) => (
+                              {filteredCourses.map((c) => (
                                  <tr key={c.id} className={`hover:bg-white/[0.04] transition-all group ${c.cutoffPoints ? 'border-l-4 border-l-green-600' : 'border-l-4 border-l-gray-700'}`}>
                                     <td className="p-6 md:p-12">
                                        <div className="text-lg md:text-2xl font-black tracking-tighter text-white uppercase leading-none mb-2 flex items-center gap-2">
